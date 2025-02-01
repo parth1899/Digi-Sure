@@ -1,0 +1,6 @@
+# CODEOWNERS File - Assigns Ownership for Different Parts of the Codebase
+
+# =======================
+# Global Code Owners (default for all files)
+# =======================
+* @parthpetkar
