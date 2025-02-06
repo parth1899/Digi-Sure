@@ -1,5 +1,5 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-from Database.connection import Neo4jConnection
+from database.connection import Neo4jConnection
 
 class User:
     def __init__(self, email, name, surname, password_hash):

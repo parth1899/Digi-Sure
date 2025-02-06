@@ -1,40 +1,12 @@
 from flask import Blueprint, request, jsonify
-import jwt
-from datetime import datetime, timedelta
-from functools import wraps
-from Models.user import User
-from config import Config
+from models.user import User
+from utils.auth import create_token, token_required
 
 auth_bp = Blueprint('auth', __name__)
 
-def create_token(user_email):
-    payload = {
-        'email': user_email,
-        'exp': datetime.utcnow() + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
-    }
-    return jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
-
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({'message': 'Token is missing'}), 401
-        try:
-            token = token.split()[1]  # Remove 'Bearer ' prefix
-            data = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
-            current_user = User.get_user_by_email(data['email'])
-            if not current_user:
-                return jsonify({'message': 'Invalid token'}), 401
-        except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Token has expired'}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({'message': 'Invalid token'}), 401
-        return f(current_user, *args, **kwargs)
-    return decorated
-
 @auth_bp.route('/register', methods=['POST'])
 def register():
+    """Register a new user"""
     data = request.get_json()
     required_fields = ['email', 'name', 'surname', 'password']
     
@@ -59,6 +31,7 @@ def register():
 
 @auth_bp.route('/sign-in', methods=['POST'])
 def sign_in():
+    """Sign in an existing user"""
     data = request.get_json()
     
     if not data or not data.get('email') or not data.get('password'):
@@ -78,5 +51,5 @@ def sign_in():
 @auth_bp.route('/sign-out', methods=['POST'])
 @token_required
 def sign_out(current_user):
-    # In a more complete implementation, you might want to blacklist the token
+    """Sign out the current user"""
     return jsonify({'message': 'Successfully signed out'})

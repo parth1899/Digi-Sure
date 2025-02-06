@@ -10,3 +10,5 @@ class Config:
     NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 hour
+    UPLOAD_FOLDER = 'uploads'
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}

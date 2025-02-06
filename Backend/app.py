@@ -1,6 +1,8 @@
 from flask import Flask
+from routes.auth import auth_bp
+from routes.aadhaar import aadhaar_bp
+import os
 from flask_cors import CORS
-from Auth.routes import auth_bp
 from config import Config
 
 app = Flask(__name__)
@@ -8,7 +10,11 @@ CORS(app)
 app.config.from_object(Config)
 
 # Register blueprints
-app.register_blueprint(auth_bp, url_prefix='/api')
+os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+
+# Register blueprints
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(aadhaar_bp, url_prefix='/aadhaar')
 
 @app.route('/')
 def home():

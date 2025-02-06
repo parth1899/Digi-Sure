@@ -33,7 +33,7 @@ const SignIn = () => {
       if (response.status === 200) {
         // You might want to store the token from response if your API returns one
         // localStorage.setItem('token', response.data.token);
-
+        console.log(response.data.token);
         console.log("Sign-in successful!");
         navigate("/dashboard");
       }
