@@ -1,0 +1,89 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.video-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 30px; /* Increased padding for better spacing */
+  background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque background */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Enhanced shadow for depth */
+  border-radius: 12px; /* More rounded corners */
+  text-align: center;
+}
+
+.auth-container h2 {
+  margin-bottom: 25px; /* Increased margin for better spacing */
+  color: #007bff; /* Changed color to match the theme */
+  font-weight: bold; /* Made the font bold */
+}
+
+.auth-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-container input {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.auth-container button {
+  padding: 12px; /* Increased padding for better touch target */
+  background-color: #0056b3; /* Darker blue for button */
+  color: #fff;
+  border: none;
+  border-radius: 6px; /* More rounded corners */
+  cursor: pointer;
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.auth-container button:hover {
+  background-color: #004494; /* Darker shade on hover */
+}
+
+.auth-container button:hover {
+  background-color: #0056b3;
+}
+
+.auth-container .logo {
+  margin-bottom: 20px;
+  max-width: 100px; /* Adjust the max-width to fit the logo perfectly */
+  height: auto;
+}
+
+.auth-container .footer {
+  margin-top: 20px;
+  font-size: 0.9em;
+  color: #777;
+}
+
+.bank-title {
+  position: absolute;
+  top: 20px;
+  left: 50%; /* Center horizontally */
+  transform: translateX(-50%); /* Adjust position to center */
+  text-align: center;
+  font-size: 2em;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}

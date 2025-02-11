@@ -5,6 +5,11 @@
   text-align: center;
 }
 
+body {
+  font-family: Arial, sans-serif; /* Ensure consistent font across the application */
+  background-color: #f8f9fa; /* Light background color for better contrast */
+}
+
 .logo {
   height: 6em;
   padding: 1.5em;
