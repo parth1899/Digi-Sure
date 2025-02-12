@@ -25,7 +25,7 @@ const SignIn = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/sign-in",
+        "http://localhost:8080/auth/sign-in",
         formData
       );
 

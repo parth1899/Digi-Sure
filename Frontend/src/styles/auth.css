@@ -20,9 +20,9 @@ body {
 }
 
 .auth-container {
-  width: 100%;
+  /* width: 100%; */
   max-width: 400px;
-  padding: 30px; /* Increased padding for better spacing */
+  padding: 60px; /* Increased padding for better spacing */
   background-color: rgba(
     255,
     255,

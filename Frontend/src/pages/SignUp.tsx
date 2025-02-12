@@ -29,7 +29,7 @@ const SignUp = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/register",
+        "http://localhost:8080/auth/register",
         formData
       );
 
