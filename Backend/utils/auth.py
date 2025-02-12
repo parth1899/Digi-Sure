@@ -1,4 +1,5 @@
 import jwt
+from jwt import decode
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify
@@ -32,3 +33,12 @@ def token_required(f):
             return jsonify({'message': 'Invalid token'}), 401
         return f(current_user, *args, **kwargs)
     return decorated
+
+
+def get_user_from_token(token):
+    try:
+        payload = decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
+        return payload.get('email')
+    except Exception as e:
+        print(f"Token decode error: {str(e)}")
+        return None
