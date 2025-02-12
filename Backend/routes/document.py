@@ -8,42 +8,50 @@ from config import Config
 import openbharatocr
 from pdf2image import convert_from_path
 
-aadhaar_bp = Blueprint('aadhaar', __name__)
+document_bp = Blueprint('document', __name__)
 
 def allowed_file(filename):
     """Check if the file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
 
-def process_aadhaar_details(aadhar_info):
-    """Process and validate Aadhaar card details"""
+def process_aadhaar_details(aadhar_info_front, aadhar_info_back):
+    """Process and validate Aadhaar card details from both front and back"""
     # Validate Aadhaar number
-    aadhar_number = aadhar_info['Aadhaar Number'].replace(' ', '')
+    aadhar_number = aadhar_info_front['Aadhaar Number'].replace(' ', '')
     if not aadhar_number.isdigit() or len(aadhar_number) != 12:
         raise ValueError("Invalid Aadhaar number format")
 
     # Process date
     try:
-        dob = datetime.strptime(aadhar_info['Date/Year of Birth'], '%d/%m/%Y')
+        dob = datetime.strptime(aadhar_info_front['Date/Year of Birth'], '%d/%m/%Y')
         formatted_dob = dob.strftime('%Y-%m-%d')
     except ValueError:
         try:
-            dob = datetime.strptime(aadhar_info['Date/Year of Birth'], '%Y')
+            dob = datetime.strptime(aadhar_info_front['Date/Year of Birth'], '%Y')
             formatted_dob = f"{dob.year}-01-01"
         except ValueError:
             raise ValueError("Invalid date format in Date/Year of Birth")
 
     # Process gender
     valid_genders = {'M', 'F', 'MALE', 'FEMALE', 'OTHER'}
-    if aadhar_info['Gender'].upper() not in valid_genders:
+    if aadhar_info_front['Gender'].upper() not in valid_genders:
         raise ValueError("Invalid gender value")
 
-    normalized_gender = ('MALE' if aadhar_info['Gender'].upper() in {'M', 'MALE'}
-                        else 'FEMALE' if aadhar_info['Gender'].upper() in {'F', 'FEMALE'}
+    normalized_gender = ('MALE' if aadhar_info_front['Gender'].upper() in {'M', 'MALE'}
+                        else 'FEMALE' if aadhar_info_front['Gender'].upper() in {'F', 'FEMALE'}
                         else 'OTHER')
 
-    return formatted_dob, normalized_gender, aadhar_number
+    # Validate address
+    if 'Address' not in aadhar_info_back or not aadhar_info_back['Address'].strip():
+        raise ValueError("Missing or invalid address information")
 
-@aadhaar_bp.route('/upload-aadhaar-card', methods=['POST'])
+    # Validate father's name
+    if 'Father Name' not in aadhar_info_back or not aadhar_info_back['Father Name'].strip():
+        raise ValueError("Missing or invalid father's name")
+
+    return formatted_dob, normalized_gender, aadhar_number, aadhar_info_back['Address'].strip(), aadhar_info_back['Father Name'].strip()
+
+@document_bp.route('/upload-aadhaar-card', methods=['POST'])
 @token_required
 def upload_aadhar_card(current_user):
     """Upload and process Aadhaar card with name matching and validation"""
@@ -74,14 +82,18 @@ def upload_aadhar_card(current_user):
                 os.remove(file_path)
                 file_path = temp_image_path
 
-            # Extract Aadhar details
-            aadhar_info = openbharatocr.front_aadhaar(file_path)
+            # Extract Aadhar details from both sides
+            aadhar_info_front = openbharatocr.front_aadhaar(file_path)
+            aadhar_info_back = openbharatocr.back_aadhaar(file_path)
             
-            if not all(key in aadhar_info for key in ['Full Name', 'Date/Year of Birth', 'Gender', 'Aadhaar Number']):
-                raise ValueError("Missing required Aadhaar information")
+            if not all(key in aadhar_info_front for key in ['Full Name', 'Date/Year of Birth', 'Gender', 'Aadhaar Number']):
+                raise ValueError("Missing required Aadhaar information from front side")
+
+            if not all(key in aadhar_info_back for key in ['Father Name', 'Address']):
+                raise ValueError("Missing required Aadhaar information from back side")
 
             # Process name
-            aadhar_name_parts = aadhar_info['Full Name'].strip().split()
+            aadhar_name_parts = aadhar_info_front['Full Name'].strip().split()
             if len(aadhar_name_parts) < 2:
                 raise ValueError("Invalid name format in Aadhaar card")
 
@@ -100,10 +112,12 @@ def upload_aadhar_card(current_user):
                     'error': 'The name on the Aadhaar card does not match your registered name'
                 }), 400
 
-            # Process other details
-            formatted_dob, normalized_gender, aadhar_number = process_aadhaar_details(aadhar_info)
+            # Process all details
+            formatted_dob, normalized_gender, aadhar_number, address, father_name = process_aadhaar_details(
+                aadhar_info_front, aadhar_info_back
+            )
 
-            # Update database
+            # Update database with additional information
             db = Neo4jConnection()
             with db.get_session() as session:
                 result = session.run(
@@ -115,6 +129,8 @@ def upload_aadhar_card(current_user):
                         i.surname = $surname,
                         i.given_name = $name,
                         i.middle_name = $middle_name,
+                        i.father_name = $father_name,
+                        i.address = $address,
                         i.dob = $dob,
                         i.gender = $gender,
                         i.created_at = datetime()
@@ -123,6 +139,8 @@ def upload_aadhar_card(current_user):
                         i.surname = $surname,
                         i.given_name = $name,
                         i.middle_name = $middle_name,
+                        i.father_name = $father_name,
+                        i.address = $address,
                         i.dob = $dob,
                         i.gender = $gender,
                         i.updated_at = datetime()
@@ -132,8 +150,10 @@ def upload_aadhar_card(current_user):
                     email=current_user.email,
                     name=current_user.name,
                     surname=current_user.surname,
-                    full_name=aadhar_info['Full Name'].strip(),
+                    full_name=aadhar_info_front['Full Name'].strip(),
                     middle_name=aadhar_middle_name,
+                    father_name=father_name,
+                    address=address,
                     aadhar_number=aadhar_number,
                     dob=formatted_dob,
                     gender=normalized_gender
@@ -145,10 +165,12 @@ def upload_aadhar_card(current_user):
             return jsonify({
                 'message': 'Aadhaar card processed successfully',
                 'data': {
-                    'name': aadhar_info['Full Name'].strip(),
+                    'name': aadhar_info_front['Full Name'].strip(),
                     'dob': formatted_dob,
                     'gender': normalized_gender,
-                    'aadhaar_number': aadhar_number
+                    'aadhaar_number': aadhar_number,
+                    'father_name': father_name,
+                    'address': address
                 }
             }), 200
 
