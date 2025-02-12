@@ -1,4 +1,3 @@
-// pages/Profile.tsx
 import React, { useState, useRef } from "react";
 import { Upload, X } from "lucide-react";
 
@@ -60,14 +59,39 @@ const Profile: React.FC = () => {
 
     setUploadState((prev) => ({ ...prev, isUploading: true, error: null }));
 
-    // Simulating upload - replace with actual API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadState.file);
 
-    setUploadState((prev) => ({
-      ...prev,
-      isUploading: false,
-      isSuccess: true,
-    }));
+      const response = await fetch(
+        "http://localhost:8080/docs/upload-aadhaar-card",
+        {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + localStorage.getItem("token"), // Assuming token is stored in localStorage
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.statusText}`);
+      }
+
+      await response.json();
+
+      setUploadState((prev) => ({
+        ...prev,
+        isUploading: false,
+        isSuccess: true,
+      }));
+    } catch (error) {
+      setUploadState((prev) => ({
+        ...prev,
+        isUploading: false,
+        error: error instanceof Error ? error.message : "Upload failed",
+      }));
+    }
   };
 
   const clearFile = () => {
@@ -134,6 +158,14 @@ const Profile: React.FC = () => {
       opacity: 0.5,
       cursor: "not-allowed",
     },
+    error: {
+      color: "#dc2626",
+      marginTop: "12px",
+    },
+    success: {
+      color: "#16a34a",
+      marginTop: "12px",
+    },
   };
 
   return (
@@ -171,6 +203,12 @@ const Profile: React.FC = () => {
           </div>
         )}
       </div>
+
+      {uploadState.error && <p style={style.error}>{uploadState.error}</p>}
+
+      {uploadState.isSuccess && (
+        <p style={style.success}>File uploaded successfully!</p>
+      )}
 
       {uploadState.file && !uploadState.isSuccess && (
         <button
