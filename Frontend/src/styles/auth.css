@@ -23,7 +23,12 @@ body {
   width: 100%;
   max-width: 400px;
   padding: 30px; /* Increased padding for better spacing */
-  background-color: rgba(255, 255, 255, 0.9); /* Slightly more opaque background */
+  background-color: rgba(
+    255,
+    255,
+    255,
+    0.9
+  ); /* Slightly more opaque background */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Enhanced shadow for depth */
   border-radius: 12px; /* More rounded corners */
   text-align: center;
