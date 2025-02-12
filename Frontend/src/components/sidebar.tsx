@@ -1,5 +1,5 @@
-// Sidebar.tsx
 import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   Home,
   User,
@@ -46,6 +46,7 @@ interface StyleTypes {
 
 const Sidebar: React.FC = () => {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const location = useLocation();
 
   const style: StyleTypes = {
     sidebar: {
@@ -191,6 +192,12 @@ const Sidebar: React.FC = () => {
     },
   ];
 
+  const handleItemClick = (item: NavItem) => {
+    if (item.subItems) {
+      toggleExpand(item.label);
+    }
+  };
+
   const toggleExpand = (label: string) => {
     setExpandedItems((prev) =>
       prev.includes(label)
@@ -200,7 +207,7 @@ const Sidebar: React.FC = () => {
   };
 
   const isActivePath = (path: string): boolean => {
-    return window.location.pathname === path;
+    return location.pathname === path;
   };
 
   return (
@@ -210,10 +217,14 @@ const Sidebar: React.FC = () => {
       <nav style={style.nav}>
         {navItems.map((item) => (
           <div key={item.path}>
-            <div
-              onClick={() =>
-                item.subItems ? toggleExpand(item.label) : undefined
-              }
+            <Link
+              to={item.path}
+              onClick={(e) => {
+                if (item.subItems) {
+                  e.preventDefault();
+                }
+                handleItemClick(item);
+              }}
               style={{
                 ...style.navItem,
                 ...(isActivePath(item.path) ? style.activeNavItem : {}),
@@ -230,14 +241,14 @@ const Sidebar: React.FC = () => {
                   )}
                 </span>
               )}
-            </div>
+            </Link>
 
             {item.subItems && expandedItems.includes(item.label) && (
               <div style={style.subNav}>
                 {item.subItems.map((subItem) => (
-                  <a
+                  <Link
                     key={subItem.path}
-                    href={subItem.path}
+                    to={subItem.path}
                     style={{
                       ...style.subItem,
                       ...(isActivePath(subItem.path)
@@ -247,7 +258,7 @@ const Sidebar: React.FC = () => {
                   >
                     <span style={style.icon}>{subItem.icon}</span>
                     {subItem.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             )}

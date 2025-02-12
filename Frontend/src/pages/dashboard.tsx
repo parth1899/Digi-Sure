@@ -1,17 +1,14 @@
-// Dashboard.tsx
-import React, { ReactNode } from "react";
+// pages/Dashboard.tsx
+import React from "react";
+import { Outlet } from "react-router-dom";
 import Sidebar from "../components/sidebar";
-
-interface DashboardProps {
-  children?: ReactNode;
-}
 
 interface StyleTypes {
   layout: React.CSSProperties;
   main: React.CSSProperties;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ children }) => {
+const Dashboard: React.FC = () => {
   const style: StyleTypes = {
     layout: {
       display: "flex",
@@ -28,7 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({ children }) => {
       <Sidebar />
       <main style={style.main}>
         <h1>Dashboard</h1>
-        {children}
+        <Outlet />
       </main>
     </div>
   );
