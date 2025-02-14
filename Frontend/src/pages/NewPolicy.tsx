@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import {
   Car,
   User,
@@ -50,6 +51,7 @@ function Apply() {
     ncb: "",
     addons: [],
   });
+  const [error, setError] = useState<string | null>(null);
 
   const steps = [
     { number: 1, title: "Vehicle Details", icon: Car },
@@ -60,12 +62,50 @@ function Apply() {
     { number: 6, title: "Success", icon: CheckCircle },
   ];
 
-  const handleNext = () => {
+  const submitFormData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await axios.post(
+        'http://localhost:8080/apply/new',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        return true;
+      } else {
+        throw new Error('Failed to submit application');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while submitting the application');
+      return false;
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 4) {
+      // Submit form data before proceeding to payment
+      const submitted = await submitFormData();
+      if (!submitted) {
+        return; // Don't proceed if submission failed
+      }
+    }
     setStep((prev) => Math.min(prev + 1, 6));
   };
 
   const handleBack = () => {
     setStep((prev) => Math.max(prev - 1, 1));
+    setError(null); // Clear any existing errors when going back
   };
 
   const updateFormData = (data: Partial<FormData>) => {

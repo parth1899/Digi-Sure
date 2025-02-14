@@ -35,6 +35,7 @@ const VehicleDetails: React.FC<Props> = ({
             <option value="car">Car</option>
             <option value="suv">SUV</option>
             <option value="commercial">Commercial Vehicle</option>
+            <option value="twoWheeler">Two-Wheeler</option>
           </select>
         </div>
 
