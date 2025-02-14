@@ -8,13 +8,13 @@ import {
   CreditCard,
   CheckCircle,
 } from "lucide-react";
-import StepIndicator from "../components/StepIndicator";
-import VehicleDetails from "../components/VehicleDetails";
-import PersonalInfo from "../components/PersonalInfo";
-import PolicyCustomization from "../components/PolicyCustomization";
-import Summary from "../components/Summary";
-import Payment from "../components/Payment";
-import Success from "../components/Success";
+import StepIndicator from "../components/Policy/StepIndicator";
+import VehicleDetails from "../components/Policy/VehicleDetails";
+import PersonalInfo from "../components/Policy/PersonalInfo";
+import PolicyCustomization from "../components/Policy/PolicyCustomization";
+import Summary from "../components/Policy/Summary";
+import Payment from "../components/Policy/Payment";
+import Success from "../components/Policy/Success";
 
 export type FormData = {
   vehicleType: string;

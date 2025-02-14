@@ -10,7 +10,7 @@ import {
   ArrowRight,
   IndianRupee,
 } from "lucide-react";
-import OTPInput from "../components/OTPInput";
+import OTPInput from "../components/Auth/OTPInput";
 
 function App() {
   const navigate = useNavigate();
