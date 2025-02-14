@@ -1,5 +1,5 @@
 import React from "react";
-import { FormData } from "../pages/apply";
+import { FormData } from "../../pages/NewPolicy";
 
 type Props = {
   formData: FormData;

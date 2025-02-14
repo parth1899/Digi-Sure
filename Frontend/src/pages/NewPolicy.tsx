@@ -7,13 +7,13 @@ import {
   CreditCard,
   CheckCircle,
 } from "lucide-react";
-import StepIndicator from "../components/StepIndicator";
-import VehicleDetails from "../components/VehicleDetails";
-import PersonalInfo from "../components/PersonalInfo";
-import PolicyCustomization from "../components/PolicyCustomization";
-import Summary from "../components/Summary";
-import Payment from "../components/Payment";
-import Success from "../components/Success";
+import StepIndicator from "../components/Policy/StepIndicator";
+import VehicleDetails from "../components/Policy/VehicleDetails";
+import PersonalInfo from "../components/Policy/PersonalInfo";
+import PolicyCustomization from "../components/Policy/PolicyCustomization";
+import Summary from "../components/Policy/Summary";
+import Payment from "../components/Policy/Payment";
+import Success from "../components/Policy/Success";
 
 export type FormData = {
   vehicleType: string;
@@ -118,31 +118,6 @@ function Apply() {
   };
 
   return (
-    // <div className="min-h-screen bg-gray-50">
-    //   {/* <header className="bg-blue-700 text-white py-4 px-6 shadow-lg">
-    //     <div className="max-w-6xl mx-auto flex items-center justify-between">
-    //       <div className="flex items-center space-x-2">
-    //         <Shield size={32} />
-    //         <h1 className="text-2xl font-bold">SBI General Car Insurance</h1>
-    //       </div>
-    //       <nav className="hidden md:flex space-x-6">
-    //         <a href="#" className="hover:text-blue-200">
-    //           Help
-    //         </a>
-    //         <a href="#" className="hover:text-blue-200">
-    //           Support
-    //         </a>
-    //         <a
-    //           href="#"
-    //           className="bg-white text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-50"
-    //         >
-    //           Login
-    //         </a>
-    //       </nav>
-    //     </div>
-    //   </header> */}
-
-    // </div>
     <main className="max-w-6xl mx-auto py-8 px-4">
       <StepIndicator steps={steps} currentStep={step} />
       <div className="mt-8">{renderStep()}</div>
