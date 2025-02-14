@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import {
   Car,
   User,
@@ -50,6 +51,7 @@ function Apply() {
     ncb: "",
     addons: [],
   });
+  const [error, setError] = useState<string | null>(null);
 
   const steps = [
     { number: 1, title: "Vehicle Details", icon: Car },
@@ -60,12 +62,50 @@ function Apply() {
     { number: 6, title: "Success", icon: CheckCircle },
   ];
 
-  const handleNext = () => {
+  const submitFormData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await axios.post(
+        'http://localhost:8080/apply/new',
+        formData,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.status === 200 || response.status === 201) {
+        return true;
+      } else {
+        throw new Error('Failed to submit application');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while submitting the application');
+      return false;
+    }
+  };
+
+  const handleNext = async () => {
+    if (step === 4) {
+      // Submit form data before proceeding to payment
+      const submitted = await submitFormData();
+      if (!submitted) {
+        return; // Don't proceed if submission failed
+      }
+    }
     setStep((prev) => Math.min(prev + 1, 6));
   };
 
   const handleBack = () => {
     setStep((prev) => Math.max(prev - 1, 1));
+    setError(null); // Clear any existing errors when going back
   };
 
   const updateFormData = (data: Partial<FormData>) => {
@@ -118,31 +158,6 @@ function Apply() {
   };
 
   return (
-    // <div className="min-h-screen bg-gray-50">
-    //   {/* <header className="bg-blue-700 text-white py-4 px-6 shadow-lg">
-    //     <div className="max-w-6xl mx-auto flex items-center justify-between">
-    //       <div className="flex items-center space-x-2">
-    //         <Shield size={32} />
-    //         <h1 className="text-2xl font-bold">SBI General Car Insurance</h1>
-    //       </div>
-    //       <nav className="hidden md:flex space-x-6">
-    //         <a href="#" className="hover:text-blue-200">
-    //           Help
-    //         </a>
-    //         <a href="#" className="hover:text-blue-200">
-    //           Support
-    //         </a>
-    //         <a
-    //           href="#"
-    //           className="bg-white text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-50"
-    //         >
-    //           Login
-    //         </a>
-    //       </nav>
-    //     </div>
-    //   </header> */}
-
-    // </div>
     <main className="max-w-6xl mx-auto py-8 px-4">
       <StepIndicator steps={steps} currentStep={step} />
       <div className="mt-8">{renderStep()}</div>

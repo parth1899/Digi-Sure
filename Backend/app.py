@@ -1,6 +1,7 @@
 from flask import Flask
 from routes.auth import auth_bp
 from routes.document import document_bp
+from routes.apply import apply_bp
 # from routes.profile import profile_bp
 import os
 from flask_cors import CORS
@@ -16,6 +17,7 @@ os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(document_bp, url_prefix='/docs')
+app.register_blueprint(apply_bp, url_prefix='/apply')
 # app.register_blueprint(profile_bp, url_prefix='/profile')
 
 @app.route('/')
