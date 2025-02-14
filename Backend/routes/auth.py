@@ -8,16 +8,16 @@ auth_bp = Blueprint('auth', __name__)
 def register():
     """Register a new user"""
     data = request.get_json()
-    required_fields = ['email', 'name', 'surname', 'password']
+    required_fields = ['email', 'password', 'mobile', 'name']
     
     if not all(field in data for field in required_fields):
         return jsonify({'message': 'Missing required fields'}), 400
 
     user = User.create_user(
         data['email'],
-        data['name'],
-        data['surname'],
-        data['password']
+        data['password'],
+        data['mobile'],
+        data['name']
     )
 
     if not user:
