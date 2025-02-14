@@ -2,14 +2,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from database.connection import Neo4jConnection
 
 class User:
-    def __init__(self, email, name, surname, password_hash):
+    def __init__(self, email, password_hash, mobile, name):
         self.email = email
-        self.name = name
-        self.surname = surname
         self.password_hash = password_hash
+        self.mobile = mobile
+        self.name = name
 
     @staticmethod
-    def create_user(email, name, surname, password):
+    def create_user(email, password, mobile, name):
         db = Neo4jConnection()
         with db.get_session() as session:
             # Check if user already exists
@@ -25,17 +25,17 @@ class User:
                 """
                 CREATE (u:User {
                     email: $email,
-                    name: $name,
-                    surname: $surname,
-                    password_hash: $password_hash
+                    password_hash: $password_hash,
+                    mobile: $mobile,
+                    name: $name
                 })
                 """,
                 email=email,
-                name=name,
-                surname=surname,
-                password_hash=password_hash
+                password_hash=password_hash,
+                mobile= mobile,
+                name=name
             )
-            return User(email, name, surname, password_hash)
+            return User(email, password_hash, mobile, name)
 
     @staticmethod
     def get_user_by_email(email):
@@ -50,9 +50,9 @@ class User:
                 user = user['u']
                 return User(
                     user['email'],
-                    user['name'],
-                    user['surname'],
-                    user['password_hash']
+                    user['password_hash'],
+                    user['mobile'],
+                    user['name']
                 )
             return None
 
