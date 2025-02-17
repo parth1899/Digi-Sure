@@ -1,32 +1,57 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Shield } from "lucide-react";
 import { Policy } from "../../types";
 import { useNavigate } from "react-router-dom";
-
-const policies: Policy[] = [
-  {
-    type: "Life",
-    policyNumber: "LI-2024-001",
-    sumInsured: 5000000,
-    premium: 25000,
-    status: "Active",
-    renewalDate: "15 Dec 2024",
-  },
-  // Add more policies...
-];
+import axios from "axios";
 
 const Policies: React.FC = () => {
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const addnewpolicy = () => {
-    navigate("/NewPolicy");
-  };
+
+  useEffect(() => {
+    const fetchPolicies = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await axios.get(
+          "http://localhost:8080/dashboard/policies",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setPolicies(response.data.data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch policies"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPolicies();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">Loading...</div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-600 p-4">Error: {error}</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold">All Insurance Policies</h3>
           <button
-            onClick={addnewpolicy}
+            onClick={() => navigate("/NewPolicy")}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
           >
             Add New Policy
@@ -41,6 +66,12 @@ const Policies: React.FC = () => {
                   <p className="text-sm text-gray-500">
                     Policy: {policy.policyNumber}
                   </p>
+                  {policy.vehicle && (
+                    <p className="text-sm text-gray-500">
+                      Vehicle: {policy.vehicle.make} {policy.vehicle.model} (
+                      {policy.vehicle.year})
+                    </p>
+                  )}
                 </div>
                 <Shield className="w-5 h-5 text-green-600" />
               </div>
@@ -59,7 +90,17 @@ const Policies: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-600">Status</p>
-                  <p className="text-green-600 font-medium">{policy.status}</p>
+                  <p
+                    className={`font-medium ${
+                      policy.status === "PENDING"
+                        ? "text-yellow-600"
+                        : policy.status === "ACTIVE"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {policy.status}
+                  </p>
                 </div>
                 <div>
                   <p className="text-gray-600">Renewal Due</p>

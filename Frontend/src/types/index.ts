@@ -14,6 +14,12 @@ export interface Policy {
   premium: number;
   status: string;
   renewalDate: string;
+  vehicle?: {
+    make: string;
+    model: string;
+    year: string;
+    registration: string;
+  };
 }
 
 export interface Claim {
