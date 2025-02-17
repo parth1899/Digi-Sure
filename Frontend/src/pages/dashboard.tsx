@@ -27,7 +27,7 @@ const Dashboard = () => {
   const renderContent = () => {
     switch (activeTab) {
       case "personal":
-        return <PersonalInfo user={user} />;
+        return <PersonalInfo />;
       case "policies":
         return <Policies />;
       case "claims":

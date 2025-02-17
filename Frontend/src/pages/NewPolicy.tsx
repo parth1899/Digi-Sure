@@ -71,7 +71,7 @@ function Apply() {
       }
 
       const response = await axios.post(
-        'http://localhost:8080/apply/new',
+        'http://localhost:8081/apply/new',
         formData,
         {
           headers: {

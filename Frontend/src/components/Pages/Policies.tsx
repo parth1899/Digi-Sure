@@ -15,7 +15,7 @@ const Policies: React.FC = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          "http://localhost:8080/dashboard/policies",
+          "http://localhost:8081/dashboard/policies",
           {
             headers: {
               Authorization: `Bearer ${token}`,

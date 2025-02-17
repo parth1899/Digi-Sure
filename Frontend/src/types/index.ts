@@ -46,9 +46,12 @@ export interface Transaction {
 }
 
 export interface Document {
+  id: string;
   name: string;
   type: string;
   count: number;
+  uploadedOn: Date;
+  size: number;
   icon: React.ComponentType; // This would be a Lucide icon component type
 }
 
@@ -62,4 +65,17 @@ export interface SupportTicket {
   id: string;
   subject: string;
   status: string;
+}
+
+export interface NomineeFormData {
+  name: string;
+  dateOfBirth: string;
+  relation: string;
+  aadharNumber: string;
+  panNumber?: string;
+  mobileNumber: string;
+  email?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  share: string;
 }
