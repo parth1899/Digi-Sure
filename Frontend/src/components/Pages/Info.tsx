@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ChevronRight, Shield, Pencil, Check, X } from "lucide-react";
+import { Shield, Pencil, Check, X } from "lucide-react";
 
 interface User {
   name: string;
@@ -23,7 +23,7 @@ const mockUser: User = {
   aadharNumber: "1234 5678 9012",
   panNumber: "ABCDE1234F",
   accountNumber: "1234567890",
-  ifscCode: "BANK0123456"
+  ifscCode: "BANK0123456",
 };
 
 const PersonalInfo: React.FC = () => {
@@ -31,30 +31,40 @@ const PersonalInfo: React.FC = () => {
   const [editMode, setEditMode] = useState({
     personal: false,
     banking: false,
-    address: false
+    address: false,
   });
   const [tempData, setTempData] = useState<User>(user);
 
   const handleEdit = (section: keyof typeof editMode) => {
-    setEditMode(prev => ({ ...prev, [section]: true }));
+    setEditMode((prev) => ({ ...prev, [section]: true }));
     setTempData(user);
   };
 
   const handleCancel = (section: keyof typeof editMode) => {
-    setEditMode(prev => ({ ...prev, [section]: false }));
+    setEditMode((prev) => ({ ...prev, [section]: false }));
     setTempData(user);
   };
 
   const handleSave = (section: keyof typeof editMode) => {
     setUser(tempData);
-    setEditMode(prev => ({ ...prev, [section]: false }));
+    setEditMode((prev) => ({ ...prev, [section]: false }));
   };
 
   const handleChange = (field: keyof User, value: string) => {
-    setTempData(prev => ({ ...prev, [field]: value }));
+    setTempData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const InputField = ({ label, field, value, onChange }: { label: string; field: keyof User; value: string; onChange: (field: keyof User, value: string) => void }) => (
+  const InputField = ({
+    label,
+    field,
+    value,
+    onChange,
+  }: {
+    label: string;
+    field: keyof User;
+    value: string;
+    onChange: (field: keyof User, value: string) => void;
+  }) => (
     <div>
       <label className="block text-sm text-gray-600">{label}</label>
       <input
@@ -80,8 +90,8 @@ const PersonalInfo: React.FC = () => {
         <div className="flex justify-between items-start mb-6">
           <h3 className="text-lg font-semibold">User Information</h3>
           {!editMode.personal ? (
-            <button 
-              onClick={() => handleEdit('personal')}
+            <button
+              onClick={() => handleEdit("personal")}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
             >
               <Pencil className="w-4 h-4 mr-1" />
@@ -89,15 +99,15 @@ const PersonalInfo: React.FC = () => {
             </button>
           ) : (
             <div className="flex space-x-2">
-              <button 
-                onClick={() => handleSave('personal')}
+              <button
+                onClick={() => handleSave("personal")}
                 className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center"
               >
                 <Check className="w-4 h-4 mr-1" />
                 Save
               </button>
-              <button 
-                onClick={() => handleCancel('personal')}
+              <button
+                onClick={() => handleCancel("personal")}
                 className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -110,7 +120,10 @@ const PersonalInfo: React.FC = () => {
           <div className="flex-shrink-0">
             <div className="relative">
               <img
-                src={user.profilePicture || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"}
+                src={
+                  user.profilePicture ||
+                  "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"
+                }
                 alt={user.name}
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
               />
@@ -122,9 +135,24 @@ const PersonalInfo: React.FC = () => {
           <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
             {editMode.personal ? (
               <>
-                <InputField label="Full Name" field="name" value={tempData.name} onChange={handleChange} />
-                <InputField label="Email Address" field="email" value={tempData.email} onChange={handleChange} />
-                <InputField label="Mobile Number" field="phone" value={tempData.phone} onChange={handleChange} />
+                <InputField
+                  label="Full Name"
+                  field="name"
+                  value={tempData.name}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Email Address"
+                  field="email"
+                  value={tempData.email}
+                  onChange={handleChange}
+                />
+                <InputField
+                  label="Mobile Number"
+                  field="phone"
+                  value={tempData.phone}
+                  onChange={handleChange}
+                />
                 <DisplayField label="Customer ID" value={user.customerId} />
               </>
             ) : (
@@ -144,8 +172,8 @@ const PersonalInfo: React.FC = () => {
         <div className="flex justify-between items-start mb-6">
           <h3 className="text-lg font-semibold">Banking & Identity Details</h3>
           {!editMode.banking ? (
-            <button 
-              onClick={() => handleEdit('banking')}
+            <button
+              onClick={() => handleEdit("banking")}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
             >
               <Pencil className="w-4 h-4 mr-1" />
@@ -153,15 +181,15 @@ const PersonalInfo: React.FC = () => {
             </button>
           ) : (
             <div className="flex space-x-2">
-              <button 
-                onClick={() => handleSave('banking')}
+              <button
+                onClick={() => handleSave("banking")}
                 className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center"
               >
                 <Check className="w-4 h-4 mr-1" />
                 Save
               </button>
-              <button 
-                onClick={() => handleCancel('banking')}
+              <button
+                onClick={() => handleCancel("banking")}
                 className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -173,24 +201,56 @@ const PersonalInfo: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {editMode.banking ? (
             <>
-              <InputField label="Aadhar Number" field="aadharNumber" value={tempData.aadharNumber || ''} onChange={handleChange} />
-              <InputField label="PAN Number" field="panNumber" value={tempData.panNumber || ''} onChange={handleChange} />
-              <InputField label="Account Number" field="accountNumber" value={tempData.accountNumber || ''} onChange={handleChange} />
-              <InputField label="IFSC Code" field="ifscCode" value={tempData.ifscCode || ''} onChange={handleChange} />
+              <InputField
+                label="Aadhar Number"
+                field="aadharNumber"
+                value={tempData.aadharNumber || ""}
+                onChange={handleChange}
+              />
+              <InputField
+                label="PAN Number"
+                field="panNumber"
+                value={tempData.panNumber || ""}
+                onChange={handleChange}
+              />
+              <InputField
+                label="Account Number"
+                field="accountNumber"
+                value={tempData.accountNumber || ""}
+                onChange={handleChange}
+              />
+              <InputField
+                label="IFSC Code"
+                field="ifscCode"
+                value={tempData.ifscCode || ""}
+                onChange={handleChange}
+              />
             </>
           ) : (
             <>
               <div>
-                <label className="block text-sm text-gray-600">Aadhar Number</label>
-                <p className="text-gray-900 font-medium">XXXX XXXX {user.aadharNumber?.slice(-4)}</p>
+                <label className="block text-sm text-gray-600">
+                  Aadhar Number
+                </label>
+                <p className="text-gray-900 font-medium">
+                  XXXX XXXX {user.aadharNumber?.slice(-4)}
+                </p>
               </div>
               <div>
-                <label className="block text-sm text-gray-600">PAN Number</label>
-                <p className="text-gray-900 font-medium">XXXXX{user.panNumber?.slice(-5)}</p>
+                <label className="block text-sm text-gray-600">
+                  PAN Number
+                </label>
+                <p className="text-gray-900 font-medium">
+                  XXXXX{user.panNumber?.slice(-5)}
+                </p>
               </div>
               <div>
-                <label className="block text-sm text-gray-600">Account Number</label>
-                <p className="text-gray-900 font-medium">XXXX XXXX {user.accountNumber?.slice(-4)}</p>
+                <label className="block text-sm text-gray-600">
+                  Account Number
+                </label>
+                <p className="text-gray-900 font-medium">
+                  XXXX XXXX {user.accountNumber?.slice(-4)}
+                </p>
               </div>
               <div>
                 <label className="block text-sm text-gray-600">IFSC Code</label>
@@ -206,8 +266,8 @@ const PersonalInfo: React.FC = () => {
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold">Address Information</h3>
           {!editMode.address ? (
-            <button 
-              onClick={() => handleEdit('address')}
+            <button
+              onClick={() => handleEdit("address")}
               className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
             >
               <Pencil className="w-4 h-4 mr-1" />
@@ -215,15 +275,15 @@ const PersonalInfo: React.FC = () => {
             </button>
           ) : (
             <div className="flex space-x-2">
-              <button 
-                onClick={() => handleSave('address')}
+              <button
+                onClick={() => handleSave("address")}
                 className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center"
               >
                 <Check className="w-4 h-4 mr-1" />
                 Save
               </button>
-              <button 
-                onClick={() => handleCancel('address')}
+              <button
+                onClick={() => handleCancel("address")}
                 className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
               >
                 <X className="w-4 h-4 mr-1" />
@@ -237,7 +297,7 @@ const PersonalInfo: React.FC = () => {
           {editMode.address ? (
             <textarea
               value={tempData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
+              onChange={(e) => handleChange("address", e.target.value)}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={3}
             />
@@ -249,11 +309,15 @@ const PersonalInfo: React.FC = () => {
 
       {/* Insurance Policies */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Active Insurance Policies</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          Active Insurance Policies
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">Life Insurance</span>
+              <span className="text-sm font-medium text-gray-600">
+                Life Insurance
+              </span>
               <Shield className="w-5 h-5 text-green-600" />
             </div>
             <p className="text-lg font-semibold">₹50,00,000</p>

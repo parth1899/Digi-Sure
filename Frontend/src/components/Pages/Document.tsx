@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { FileText, User, ClipboardList, X, Upload, File } from "lucide-react";
+import { Document } from "../../types";
 // import { Document, UploadFormData } from "../../types";
 
 type UploadFormData = {
@@ -9,7 +10,7 @@ type UploadFormData = {
 };
 
 // const DOCUMENT_TYPES = ['Policy', 'KYC', 'Medical', 'Claim', 'Other'] as const;
-const DOCUMENT_TYPES = ['Policy', 'KYC', 'Medical', 'Claim', 'Other'] as const;
+const DOCUMENT_TYPES = ["Policy", "KYC", "Medical", "Claim", "Other"] as const;
 
 const documents: Document[] = [
   {
@@ -18,8 +19,8 @@ const documents: Document[] = [
     icon: FileText,
     count: 3,
     type: "Policy",
-    uploadedOn: new Date('2024-03-10'),
-    size: 1024
+    uploadedOn: new Date("2024-03-10"),
+    size: 1024,
   },
   {
     id: "2",
@@ -27,8 +28,8 @@ const documents: Document[] = [
     icon: User,
     count: 2,
     type: "KYC",
-    uploadedOn: new Date('2024-03-09'),
-    size: 2048
+    uploadedOn: new Date("2024-03-09"),
+    size: 2048,
   },
   {
     id: "3",
@@ -36,8 +37,8 @@ const documents: Document[] = [
     icon: FileText,
     count: 1,
     type: "Medical",
-    uploadedOn: new Date('2024-03-08'),
-    size: 3072
+    uploadedOn: new Date("2024-03-08"),
+    size: 3072,
   },
   {
     id: "4",
@@ -45,8 +46,8 @@ const documents: Document[] = [
     icon: ClipboardList,
     count: 1,
     type: "Claim",
-    uploadedOn: new Date('2024-03-07'),
-    size: 512
+    uploadedOn: new Date("2024-03-07"),
+    size: 512,
   },
 ];
 
@@ -55,8 +56,8 @@ const Documents: React.FC = () => {
   const [documentsList, setDocumentsList] = useState<Document[]>(documents);
   const [dragActive, setDragActive] = useState(false);
   const [formData, setFormData] = useState<UploadFormData>({
-    documentType: '',
-    documentName: '',
+    documentType: "",
+    documentName: "",
     file: null,
   });
 
@@ -74,7 +75,7 @@ const Documents: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0]);
     }
@@ -82,7 +83,7 @@ const Documents: React.FC = () => {
 
   const handleFile = (file: File) => {
     if (file.type === "application/pdf" || file.type.startsWith("image/")) {
-      setFormData(prev => ({ ...prev, file }));
+      setFormData((prev) => ({ ...prev, file }));
     } else {
       alert("Please upload only PDF or image files");
     }
@@ -95,9 +96,9 @@ const Documents: React.FC = () => {
   };
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -111,12 +112,12 @@ const Documents: React.FC = () => {
       icon: FileText,
       count: 1,
       uploadedOn: new Date(),
-      size: formData.file.size
+      size: formData.file.size,
     };
 
-    setDocumentsList(prev => [...prev, newDocument]);
+    setDocumentsList((prev) => [...prev, newDocument]);
     setIsModalOpen(false);
-    setFormData({ documentType: '', documentName: '', file: null });
+    setFormData({ documentType: "", documentName: "", file: null });
   };
 
   return (
@@ -124,7 +125,7 @@ const Documents: React.FC = () => {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold">Documents Vault</h3>
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
           >
@@ -133,15 +134,19 @@ const Documents: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documentsList.map((doc) => (
-            <div key={doc.id} className="border rounded-lg p-4 hover:border-blue-500 transition-colors">
+            <div
+              key={doc.id}
+              className="border rounded-lg p-4 hover:border-blue-500 transition-colors"
+            >
               <div className="flex items-center space-x-3">
-                {React.createElement(doc.icon, { className: "text-blue-600" })}
+                {React.createElement(doc.icon)}
                 <div className="flex-1">
                   <p className="font-medium">{doc.name}</p>
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>{doc.count} document{doc.count !== 1 ? 's' : ''}</span>
+                    <span>
+                      {doc.count} document{doc.count !== 1 ? "s" : ""}
+                    </span>
                     {doc.size && <span>• {formatFileSize(doc.size)}</span>}
-                    
                   </div>
                   {doc.uploadedOn && (
                     <p className="text-xs text-gray-400 mt-1">
@@ -161,7 +166,7 @@ const Documents: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md m-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Upload Document</h3>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-gray-500 hover:text-gray-700"
               >
@@ -177,12 +182,19 @@ const Documents: React.FC = () => {
                 <select
                   required
                   value={formData.documentType}
-                  onChange={(e) => setFormData(prev => ({ ...prev, documentType: e.target.value as Document['type'] }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      documentType: e.target.value as Document["type"],
+                    }))
+                  }
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 >
                   <option value="">Select type</option>
-                  {DOCUMENT_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
+                  {DOCUMENT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -194,7 +206,12 @@ const Documents: React.FC = () => {
                 <input
                   type="text"
                   value={formData.documentName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, documentName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      documentName: e.target.value,
+                    }))
+                  }
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Enter custom name"
                 />
@@ -206,8 +223,12 @@ const Documents: React.FC = () => {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors
-                  ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
-                  ${formData.file ? 'bg-green-50' : ''}`}
+                  ${
+                    dragActive
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-300"
+                  }
+                  ${formData.file ? "bg-green-50" : ""}`}
               >
                 <input
                   type="file"
@@ -223,7 +244,9 @@ const Documents: React.FC = () => {
                   {formData.file ? (
                     <>
                       <File className="w-8 h-8 text-green-500 mb-2" />
-                      <p className="text-sm text-green-600 font-medium">{formData.file.name}</p>
+                      <p className="text-sm text-green-600 font-medium">
+                        {formData.file.name}
+                      </p>
                       <p className="text-xs text-gray-500 mt-1">
                         {formatFileSize(formData.file.size)}
                       </p>
@@ -232,7 +255,8 @@ const Documents: React.FC = () => {
                     <>
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">
-                        Drag & drop your file here or <span className="text-blue-500">browse</span>
+                        Drag & drop your file here or{" "}
+                        <span className="text-blue-500">browse</span>
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
                         Supports PDF, JPG, JPEG
