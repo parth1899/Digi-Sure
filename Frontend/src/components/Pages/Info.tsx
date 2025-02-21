@@ -424,13 +424,15 @@ const PersonalInfo: React.FC = () => {
               <div key={policy.id} className="border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-600">
-                    {policy.type}
+                    {policy.vehicleType}
                   </span>
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-lg font-semibold">₹{policy.amount}</p>
+                <p className="text-lg font-semibold">
+                  ₹{policy.total_insurance_amount}
+                </p>
                 <p className="text-sm text-gray-500">
-                  Policy: {policy.policyNumber}
+                  Policy: {policy.application_id}
                 </p>
               </div>
             ))

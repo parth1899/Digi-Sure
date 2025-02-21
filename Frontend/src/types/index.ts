@@ -20,6 +20,9 @@ export interface User {
 }
 
 export interface Insurance {
+  vehicleType: string;
+  total_insurance_amount: string;
+  application_id: string;
   id: string;
   type: string;
   amount: number;
