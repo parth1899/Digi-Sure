@@ -17,6 +17,7 @@ import Payment from "../components/Policy/Payment";
 import Success from "../components/Policy/Success";
 
 export type FormData = {
+  policy_number: string;
   vehicleType: string;
   registrationNumber: string;
   make: string;
@@ -40,6 +41,7 @@ export type FormData = {
 function Apply() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
+    policy_number: "",
     vehicleType: "",
     registrationNumber: "",
     make: "",
@@ -54,6 +56,10 @@ function Apply() {
     idv: "",
     ncb: "",
     addons: [],
+    policy_annual_premium: 0,
+    umbrella_limit: 0,
+    policy_csl: 0,
+    total_insurance_amount: 0,
   });
   const [error, setError] = useState<string | null>(null);
 

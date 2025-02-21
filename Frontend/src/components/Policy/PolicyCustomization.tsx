@@ -7,7 +7,9 @@ type Props = {
   onNext: () => void;
   onBack: () => void;
 };
-
+const generatePolicyNumber = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 // Premium calculation utilities
 const calculatePremiums = (formData: FormData) => {
   const { idv, ncb, addons = [] } = formData;
@@ -62,6 +64,11 @@ const PolicyCustomization: React.FC<Props> = ({
   onNext,
   onBack,
 }) => {
+  React.useEffect(() => {
+    if (!formData.policy_number) {
+      updateFormData({ policy_number: generatePolicyNumber() });
+    }
+  }, []);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onNext();
