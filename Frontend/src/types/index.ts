@@ -1,14 +1,12 @@
 export interface User {
-  sex: "male" | "female" | "other";
-  education_level:
-    | "high_school"
-    | "bachelor"
-    | "master"
-    | "doctorate"
-    | "other";
-  occupation: string;
-  hobbies: string;
-  relationship: string;
+  otherDetails: {
+    sex?: string;
+    dob?: string; // Added dob property
+    education_level: string;
+    occupation: string;
+    hobbies: string;
+    relationship: string;
+  };
   name: string;
   email: string;
   mobile: string;
@@ -19,7 +17,6 @@ export interface User {
   panNumber?: string;
   accountNumber?: string;
   ifscCode?: string;
-  dob?: string; // Added dob property
 }
 
 export interface Insurance {

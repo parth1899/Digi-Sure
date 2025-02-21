@@ -67,6 +67,7 @@ const PersonalInfo: React.FC = () => {
       const userData = await apiRequest<User>("get", "/profile");
       setUser(userData);
       setTempData(userData);
+      console.log(userData);
       return userData;
     } catch (err) {
       console.error("Failed to fetch profile:", err);
@@ -135,12 +136,12 @@ const PersonalInfo: React.FC = () => {
         case "otherDetails":
           endpoint = "/profile/other-details";
           data = {
-            sex: tempData.sex,
-            dob: tempData.dob,
-            education_level: tempData.education_level,
-            occupation: tempData.occupation,
-            hobbies: tempData.hobbies,
-            relationship: tempData.relationship,
+            sex: tempData?.otherDetails.sex,
+            dob: tempData?.otherDetails.dob,
+            education_level: tempData?.otherDetails.education_level,
+            occupation: tempData?.otherDetails.occupation,
+            hobbies: tempData?.otherDetails.hobbies,
+            relationship: tempData?.otherDetails.relationship,
           };
           break;
       }
@@ -427,9 +428,7 @@ const PersonalInfo: React.FC = () => {
                   </span>
                   <Shield className="w-5 h-5 text-green-600" />
                 </div>
-                <p className="text-lg font-semibold">
-                  ₹{policy.amount.toLocaleString()}
-                </p>
+                <p className="text-lg font-semibold">₹{policy.amount}</p>
                 <p className="text-sm text-gray-500">
                   Policy: {policy.policyNumber}
                 </p>
@@ -443,84 +442,98 @@ const PersonalInfo: React.FC = () => {
         </div>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <h3 className="text-lg font-semibold mb-4">Other Details</h3>
-        {editMode.otherDetails ? (
-          <div className="space-y-4">
-            <InputField
-              label="Sex"
-              field="sex"
-              value={tempData?.sex || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Date Of Birth"
-              field="dob"
-              value={tempData?.dob || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Education Level"
-              field="education_level"
-              value={tempData?.education_level || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Occupation"
-              field="occupation"
-              value={tempData?.occupation || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Hobbies"
-              field="hobbies"
-              value={tempData?.hobbies || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Relationship Status"
-              field="relationship"
-              value={tempData?.relationship || ""}
-              onChange={handleChange}
-            />
-            <div className="flex justify-end space-x-2">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-lg font-semibold">Other Details</h3>
+          {!editMode.otherDetails ? (
+            <button
+              onClick={() => handleEdit("otherDetails")}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center"
+            >
+              <Pencil className="w-4 h-4 mr-1" />
+              Edit
+            </button>
+          ) : (
+            <div className="flex space-x-2">
               <button
                 onClick={() => handleSave("otherDetails")}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                className="text-green-600 hover:text-green-700 text-sm font-medium flex items-center"
               >
+                <Check className="w-4 h-4 mr-1" />
                 Save
               </button>
               <button
                 onClick={() => handleCancel("otherDetails")}
-                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
               >
+                <X className="w-4 h-4 mr-1" />
                 Cancel
               </button>
             </div>
-          </div>
+          )}
+        </div>
+        {editMode.otherDetails && tempData ? (
+          <>
+            <InputField
+              label="Sex"
+              field="otherDetails"
+              value={tempData.otherDetails.sex || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Date Of Birth"
+              field="otherDetails"
+              value={tempData?.otherDetails.dob || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Education Level"
+              field="otherDetails"
+              value={tempData?.otherDetails.education_level || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Occupation"
+              field="otherDetails"
+              value={tempData?.otherDetails.occupation || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Hobbies"
+              field="otherDetails"
+              value={tempData?.otherDetails.hobbies || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Relationship Status"
+              field="otherDetails"
+              value={tempData?.otherDetails.relationship || ""}
+              onChange={handleChange}
+            />
+          </>
         ) : (
-          <div className="space-y-4">
-            <DisplayField label="Sex" value={user.sex} />
+          <>
+            <DisplayField
+              label="Sex"
+              value={user.otherDetails.sex || "Not provided"}
+            />
             <DisplayField
               label="Date Of Birth"
-              value={user.dob || "Not provided"}
+              value={user.otherDetails.dob || "Not provided"}
             />
             <DisplayField
               label="Education Level"
-              value={user.education_level}
+              value={user.otherDetails.education_level}
             />
-            <DisplayField label="Occupation" value={user.occupation} />
-            <DisplayField label="Hobbies" value={user.hobbies} />
+            <DisplayField
+              label="Occupation"
+              value={user.otherDetails.occupation}
+            />
+            <DisplayField label="Hobbies" value={user.otherDetails.hobbies} />
             <DisplayField
               label="Relationship Status"
-              value={user.relationship}
+              value={user.otherDetails.relationship}
             />
-            <button
-              onClick={() => handleEdit("otherDetails")}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-            >
-              Edit
-            </button>
-          </div>
+          </>
         )}
       </div>
     </div>

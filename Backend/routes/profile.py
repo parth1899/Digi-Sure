@@ -54,9 +54,10 @@ def get_profile(current_user_email):
             result = session.run("""
                 MATCH (u:User {email: $email})
                 OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
-                OPTIONAL MATCH (u)-[:HAS_APPLICATION]->(a:Application)
-                WHERE a.status = 'ACTIVE' AND a.type = 'INSURANCE'
-                RETURN u, b, collect(a) as insurances
+                OPTIONAL MATCH (u)-[:INSURANCE]->(a:Application)
+                OPTIONAL MATCH (u)-[:HAS_DETAILS]->(d:OtherDetails)
+                WHERE a.status = 'PENDING'
+                RETURN u, b, d, collect(a) as insurances
             """, email=current_user_email)
             
             record = result.single()
@@ -65,6 +66,7 @@ def get_profile(current_user_email):
             banking_data = dict_from_node(record['b'])
             insurances = [dict_from_node(insurance) for insurance in record['insurances']]
             other_details = dict_from_node(record['d']) if record.get('d') else {}
+            print(other_details)
 
             # Mask sensitive data
             if banking_data:
@@ -195,8 +197,8 @@ def get_insurance_policies(current_user_email):
     try:
         with neo4j.get_session() as session:
             result = session.run("""
-                MATCH (u:User {email: $email})-[:HAS_APPLICATION]->(a:Application)
-                WHERE a.status = 'ACTIVE' AND a.type = 'INSURANCE'
+                MATCH (u:User {email: $email})-[:INSURANCE]->(a:Application)
+                WHERE a.status = 'PENDING' 
                 RETURN a
             """, email=current_user_email)
             
