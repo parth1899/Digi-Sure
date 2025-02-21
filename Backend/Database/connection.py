@@ -13,3 +13,8 @@ class Neo4jConnection:
 
     def get_session(self):
         return self.driver.session()
+
+    def execute_query(self, query, parameters=None):
+        with self.driver.session() as session:
+            result = session.run(query, parameters or {})
+            return list(result)
