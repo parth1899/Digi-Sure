@@ -1,12 +1,14 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.connection import Neo4jConnection
+from datetime import datetime
 
 class User:
-    def __init__(self, email, password_hash, mobile, name):
+    def __init__(self, email, password_hash, mobile, name, created_at=None):
         self.email = email
         self.password_hash = password_hash
         self.mobile = mobile
         self.name = name
+        self.created_at = created_at
 
     @staticmethod
     def create_user(email, password, mobile, name):
@@ -21,21 +23,31 @@ class User:
                 return None
 
             password_hash = generate_password_hash(password)
-            session.run(
+            # Use Neo4j's timestamp() function to store creation time
+            result = session.run(
                 """
                 CREATE (u:User {
                     email: $email,
                     password_hash: $password_hash,
                     mobile: $mobile,
-                    name: $name
+                    name: $name,
+                    created_at: datetime()
                 })
+                RETURN u
                 """,
                 email=email,
                 password_hash=password_hash,
-                mobile= mobile,
+                mobile=mobile,
                 name=name
             )
-            return User(email, password_hash, mobile, name)
+            user_data = result.single()['u']
+            return User(
+                email,
+                password_hash,
+                mobile,
+                name,
+                user_data['created_at']
+            )
 
     @staticmethod
     def get_user_by_email(email):
@@ -52,7 +64,8 @@ class User:
                     user['email'],
                     user['password_hash'],
                     user['mobile'],
-                    user['name']
+                    user['name'],
+                    user['created_at']
                 )
             return None
 

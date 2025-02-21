@@ -19,7 +19,7 @@ os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 app.register_blueprint(auth_bp, url_prefix='/auth')
 app.register_blueprint(document_bp, url_prefix='/docs')
 app.register_blueprint(apply_bp, url_prefix='/apply')
-app.register_blueprint(profile_bp, url_prefix='/profile')
+app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 
 @app.route('/')

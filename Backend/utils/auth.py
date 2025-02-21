@@ -23,15 +23,15 @@ def token_required(f):
         try:
             token = token.split()[1]  # Remove 'Bearer ' prefix
             data = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
-            from models.user import User
-            current_user = User.get_user_by_email(data['email'])
-            if not current_user:
+            # Instead of passing the User object, we'll pass just the email
+            current_user_email = data['email']
+            if not current_user_email:
                 return jsonify({'message': 'Invalid token'}), 401
+            return f(current_user_email, *args, **kwargs)
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired'}), 401
         except jwt.InvalidTokenError:
             return jsonify({'message': 'Invalid token'}), 401
-        return f(current_user, *args, **kwargs)
     return decorated
 
 

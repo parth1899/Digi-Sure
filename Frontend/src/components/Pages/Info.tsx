@@ -1,39 +1,103 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Shield, Pencil, Check, X } from "lucide-react";
+import axios from "axios";
+import { User, Insurance } from "../../types";
+import { useNavigate } from "react-router-dom";
 
-interface User {
-  name: string;
-  email: string;
-  phone: string;
-  customerId: string;
-  address: string;
-  profilePicture?: string;
-  aadharNumber?: string;
-  panNumber?: string;
-  accountNumber?: string;
-  ifscCode?: string;
-}
-
-const mockUser: User = {
-  name: "John Doe",
-  email: "john.doe@example.com",
-  phone: "+91 98765 43210",
-  customerId: "CUS123456",
-  address: "123 Main Street, Bangalore, Karnataka 560001",
-  aadharNumber: "1234 5678 9012",
-  panNumber: "ABCDE1234F",
-  accountNumber: "1234567890",
-  ifscCode: "BANK0123456",
-};
+const API_BASE_URL = "http://localhost:8081/api";
 
 const PersonalInfo: React.FC = () => {
-  const [user, setUser] = useState<User>(mockUser);
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [insurancePolicies, setInsurancePolicies] = useState<Insurance[]>([]);
   const [editMode, setEditMode] = useState({
     personal: false,
     banking: false,
     address: false,
+    otherDetails: false,
   });
-  const [tempData, setTempData] = useState<User>(user);
+  const [tempData, setTempData] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  const apiRequest = async <T,>(
+    method: string,
+    endpoint: string,
+    data?: unknown
+  ): Promise<T> => {
+    try {
+      const config = getAuthConfig();
+      const url = `${API_BASE_URL}${endpoint}`;
+      let response;
+      if (method.toLowerCase() === "get") {
+        response = await axios.get(url, config);
+      } else if (method.toLowerCase() === "put") {
+        response = await axios.put(url, data, config);
+      } else {
+        throw new Error(`Unsupported method: ${method}`);
+      }
+      return response.data;
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/", {
+          state: { message: "Your session has expired. Please log in again." },
+        });
+        throw new Error("Authentication failed. Redirecting to login...");
+      }
+      const errorMessage =
+        (axios.isAxiosError(err) && err.response?.data?.message) ||
+        (err as Error).message ||
+        "An unknown error occurred";
+      setError(errorMessage);
+      throw err;
+    }
+  };
+
+  const fetchProfile = async () => {
+    try {
+      const userData = await apiRequest<User>("get", "/profile");
+      setUser(userData);
+      setTempData(userData);
+      return userData;
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchInsurancePolicies = async () => {
+    try {
+      const policies = await apiRequest<Insurance[]>(
+        "get",
+        "/profile/insurance"
+      );
+      setInsurancePolicies(Array.isArray(policies) ? policies : []);
+    } catch (err) {
+      console.error("Failed to fetch insurance policies:", err);
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await fetchProfile();
+        await fetchInsurancePolicies();
+      } catch (err) {
+        console.error("Initial data loading failed:", err);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleEdit = (section: keyof typeof editMode) => {
     setEditMode((prev) => ({ ...prev, [section]: true }));
@@ -45,31 +109,73 @@ const PersonalInfo: React.FC = () => {
     setTempData(user);
   };
 
-  const handleSave = (section: keyof typeof editMode) => {
-    setUser(tempData);
-    setEditMode((prev) => ({ ...prev, [section]: false }));
+  const handleSave = async (section: keyof typeof editMode) => {
+    if (!tempData) return;
+    try {
+      let endpoint = "";
+      let data = {};
+      switch (section) {
+        case "personal":
+          endpoint = "/profile/personal";
+          data = { name: tempData.name, mobile: tempData.mobile };
+          break;
+        case "banking":
+          endpoint = "/profile/banking";
+          data = {
+            aadharNumber: tempData.aadharNumber,
+            panNumber: tempData.panNumber,
+            accountNumber: tempData.accountNumber,
+            ifscCode: tempData.ifscCode,
+          };
+          break;
+        case "address":
+          endpoint = "/profile/address";
+          data = { address: tempData.address };
+          break;
+        case "otherDetails":
+          endpoint = "/profile/other-details";
+          data = {
+            sex: tempData.sex,
+            dob: tempData.dob,
+            education_level: tempData.education_level,
+            occupation: tempData.occupation,
+            hobbies: tempData.hobbies,
+            relationship: tempData.relationship,
+          };
+          break;
+      }
+      await apiRequest("put", endpoint, data);
+      const updatedProfile = await fetchProfile();
+      if (updatedProfile) {
+        setEditMode((prev) => ({ ...prev, [section]: false }));
+      }
+    } catch (err) {
+      console.error(`Failed to save ${section} data:`, err);
+    }
   };
 
   const handleChange = (field: keyof User, value: string) => {
-    setTempData((prev) => ({ ...prev, [field]: value }));
+    setTempData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
 
-  const InputField = ({
-    label,
-    field,
-    value,
-    onChange,
-  }: {
+  interface InputFieldProps {
     label: string;
     field: keyof User;
     value: string;
     onChange: (field: keyof User, value: string) => void;
+  }
+
+  const InputField: React.FC<InputFieldProps> = ({
+    label,
+    field,
+    value,
+    onChange,
   }) => (
     <div>
       <label className="block text-sm text-gray-600">{label}</label>
       <input
         type="text"
-        value={value}
+        value={value || ""}
         onChange={(e) => onChange(field, e.target.value)}
         className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
@@ -79,9 +185,26 @@ const PersonalInfo: React.FC = () => {
   const DisplayField = ({ label, value }: { label: string; value: string }) => (
     <div>
       <label className="block text-sm text-gray-600">{label}</label>
-      <p className="text-gray-900 font-medium">{value}</p>
+      <p className="text-gray-900 font-medium">{value || "Not provided"}</p>
     </div>
   );
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center p-8">Loading profile data...</div>
+    );
+  if (error)
+    return (
+      <div className="bg-red-50 p-4 rounded-md text-red-700">
+        Error: {error}
+      </div>
+    );
+  if (!user)
+    return (
+      <div className="text-center p-8">
+        No user profile data available. Please try logging in again.
+      </div>
+    );
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -120,11 +243,8 @@ const PersonalInfo: React.FC = () => {
           <div className="flex-shrink-0">
             <div className="relative">
               <img
-                src={
-                  user.profilePicture ||
-                  "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop"
-                }
-                alt={user.name}
+                src={user.profilePicture || "/api/placeholder/96/96"}
+                alt={user.name || "User profile"}
                 className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
               />
               <button className="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md hover:bg-gray-50">
@@ -133,7 +253,7 @@ const PersonalInfo: React.FC = () => {
             </div>
           </div>
           <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4">
-            {editMode.personal ? (
+            {editMode.personal && tempData ? (
               <>
                 <InputField
                   label="Full Name"
@@ -141,16 +261,11 @@ const PersonalInfo: React.FC = () => {
                   value={tempData.name}
                   onChange={handleChange}
                 />
-                <InputField
-                  label="Email Address"
-                  field="email"
-                  value={tempData.email}
-                  onChange={handleChange}
-                />
+                <DisplayField label="Email Address" value={user.email} />
                 <InputField
                   label="Mobile Number"
-                  field="phone"
-                  value={tempData.phone}
+                  field="mobile"
+                  value={tempData.mobile}
                   onChange={handleChange}
                 />
                 <DisplayField label="Customer ID" value={user.customerId} />
@@ -159,7 +274,7 @@ const PersonalInfo: React.FC = () => {
               <>
                 <DisplayField label="Full Name" value={user.name} />
                 <DisplayField label="Email Address" value={user.email} />
-                <DisplayField label="Mobile Number" value={user.phone} />
+                <DisplayField label="Mobile Number" value={user.mobile} />
                 <DisplayField label="Customer ID" value={user.customerId} />
               </>
             )}
@@ -199,7 +314,7 @@ const PersonalInfo: React.FC = () => {
           )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {editMode.banking ? (
+          {editMode.banking && tempData ? (
             <>
               <InputField
                 label="Aadhar Number"
@@ -228,34 +343,22 @@ const PersonalInfo: React.FC = () => {
             </>
           ) : (
             <>
-              <div>
-                <label className="block text-sm text-gray-600">
-                  Aadhar Number
-                </label>
-                <p className="text-gray-900 font-medium">
-                  XXXX XXXX {user.aadharNumber?.slice(-4)}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600">
-                  PAN Number
-                </label>
-                <p className="text-gray-900 font-medium">
-                  XXXXX{user.panNumber?.slice(-5)}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600">
-                  Account Number
-                </label>
-                <p className="text-gray-900 font-medium">
-                  XXXX XXXX {user.accountNumber?.slice(-4)}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600">IFSC Code</label>
-                <p className="text-gray-900 font-medium">{user.ifscCode}</p>
-              </div>
+              <DisplayField
+                label="Aadhar Number"
+                value={user.aadharNumber || "Not provided"}
+              />
+              <DisplayField
+                label="PAN Number"
+                value={user.panNumber || "Not provided"}
+              />
+              <DisplayField
+                label="Account Number"
+                value={user.accountNumber || "Not provided"}
+              />
+              <DisplayField
+                label="IFSC Code"
+                value={user.ifscCode || "Not provided"}
+              />
             </>
           )}
         </div>
@@ -294,15 +397,17 @@ const PersonalInfo: React.FC = () => {
         </div>
         <div className="col-span-2">
           <label className="block text-sm text-gray-600">Address</label>
-          {editMode.address ? (
+          {editMode.address && tempData ? (
             <textarea
-              value={tempData.address}
+              value={tempData.address || ""}
               onChange={(e) => handleChange("address", e.target.value)}
               className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={3}
             />
           ) : (
-            <p className="text-gray-900 font-medium">{user.address}</p>
+            <p className="text-gray-900 font-medium">
+              {user.address || "No address provided"}
+            </p>
           )}
         </div>
       </div>
@@ -313,18 +418,110 @@ const PersonalInfo: React.FC = () => {
           Active Insurance Policies
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="border rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">
-                Life Insurance
-              </span>
-              <Shield className="w-5 h-5 text-green-600" />
+          {insurancePolicies.length > 0 ? (
+            insurancePolicies.map((policy) => (
+              <div key={policy.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-600">
+                    {policy.type}
+                  </span>
+                  <Shield className="w-5 h-5 text-green-600" />
+                </div>
+                <p className="text-lg font-semibold">
+                  ₹{policy.amount.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Policy: {policy.policyNumber}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-4 text-gray-500">
+              No active insurance policies found
             </div>
-            <p className="text-lg font-semibold">₹50,00,000</p>
-            <p className="text-sm text-gray-500">Policy: LI-2024-001</p>
-          </div>
-          {/* Similar blocks for Health and Vehicle insurance */}
+          )}
         </div>
+      </div>
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-4">Other Details</h3>
+        {editMode.otherDetails ? (
+          <div className="space-y-4">
+            <InputField
+              label="Sex"
+              field="sex"
+              value={tempData?.sex || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Date Of Birth"
+              field="dob"
+              value={tempData?.dob || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Education Level"
+              field="education_level"
+              value={tempData?.education_level || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Occupation"
+              field="occupation"
+              value={tempData?.occupation || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Hobbies"
+              field="hobbies"
+              value={tempData?.hobbies || ""}
+              onChange={handleChange}
+            />
+            <InputField
+              label="Relationship Status"
+              field="relationship"
+              value={tempData?.relationship || ""}
+              onChange={handleChange}
+            />
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => handleSave("otherDetails")}
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => handleCancel("otherDetails")}
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <DisplayField label="Sex" value={user.sex} />
+            <DisplayField
+              label="Date Of Birth"
+              value={user.dob || "Not provided"}
+            />
+            <DisplayField
+              label="Education Level"
+              value={user.education_level}
+            />
+            <DisplayField label="Occupation" value={user.occupation} />
+            <DisplayField label="Hobbies" value={user.hobbies} />
+            <DisplayField
+              label="Relationship Status"
+              value={user.relationship}
+            />
+            <button
+              onClick={() => handleEdit("otherDetails")}
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+            >
+              Edit
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

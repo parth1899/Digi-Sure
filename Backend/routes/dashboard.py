@@ -9,7 +9,7 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/policies', methods=['GET'])
 @token_required
-def get_user_policies(current_user):
+def get_user_policies(current_user_email):
     def get_policies(tx, email):
         query = """
         MATCH (a:Application)
@@ -86,7 +86,7 @@ def get_user_policies(current_user):
     try:
         db = Neo4jConnection()
         with db.get_session() as session:
-            policies = session.execute_read(get_policies, current_user.email)
+            policies = session.execute_read(get_policies, current_user_email)
             return jsonify({
                 "status": "success",
                 "data": policies

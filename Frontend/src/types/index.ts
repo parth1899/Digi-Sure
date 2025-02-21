@@ -1,10 +1,32 @@
 export interface User {
+  sex: "male" | "female" | "other";
+  education_level:
+    | "high_school"
+    | "bachelor"
+    | "master"
+    | "doctorate"
+    | "other";
+  occupation: string;
+  hobbies: string;
+  relationship: string;
   name: string;
-  customerId: string;
   email: string;
-  phone: string;
+  mobile: string;
+  customerId: string;
   address: string;
-  activePolicies: number;
+  profilePicture?: string;
+  aadharNumber?: string;
+  panNumber?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  dob?: string; // Added dob property
+}
+
+export interface Insurance {
+  id: string;
+  type: string;
+  amount: number;
+  policyNumber: string;
 }
 
 export interface Policy {
@@ -29,6 +51,34 @@ export interface Claim {
   amount: number;
   date: string;
   details: string;
+}
+
+export interface FormData {
+  incident_date: string;
+  incident_type: string;
+  collision_type: string;
+  incident_severity: string;
+  authorities_contacted: string;
+  incident_city: string;
+  incident_location: string;
+  incident_hour_of_the_day: string;
+  number_of_vehicles_involved: string;
+  property_damage: string;
+  bodily_injuries: string;
+  witnesses: string;
+  police_report_available: string;
+  total_claim_amount: string;
+  injury_claim: string;
+  property_claim: string;
+  vehicle_claim: string;
+  description: string;
+  images: File[];
+  repairBill: File | null;
+}
+
+export interface ClaimFormProps {
+  onClose: () => void;
+  onSubmit: (formData: FormData) => void;
 }
 
 export interface PaymentMethod {
