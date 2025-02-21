@@ -30,7 +30,11 @@ export type FormData = {
   state: string;
   idv: string;
   ncb: string;
-  addons: string[];
+  addons?: string[];
+  policy_annual_premium?: number;
+  umbrella_limit?: number;
+  policy_csl?: number;
+  total_insurance_amount?: number;
 };
 
 function Apply() {
@@ -64,30 +68,34 @@ function Apply() {
 
   const submitFormData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
+      const token = localStorage.getItem("token");
+
       if (!token) {
-        throw new Error('Authentication token not found');
+        throw new Error("Authentication token not found");
       }
 
       const response = await axios.post(
-        'http://localhost:8081/apply/new',
+        "http://localhost:8081/apply/new",
         formData,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         }
       );
 
       if (response.status === 200 || response.status === 201) {
         return true;
       } else {
-        throw new Error('Failed to submit application');
+        throw new Error("Failed to submit application");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while submitting the application');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred while submitting the application"
+      );
       return false;
     }
   };

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { FormData } from "../../pages/NewPolicy";
 
 type Props = {
@@ -6,6 +6,54 @@ type Props = {
   updateFormData: (data: Partial<FormData>) => void;
   onNext: () => void;
   onBack: () => void;
+};
+
+// Premium calculation utilities
+const calculatePremiums = (formData: FormData) => {
+  const { idv, ncb, addons = [] } = formData;
+
+  // Base calculations
+  const baseRate = 0.03; // 3% of IDV as base premium
+  let basicPremium = Number(idv) * baseRate;
+
+  // Apply NCB discount
+  const ncbDiscount = (Number(ncb) / 100) * basicPremium;
+  basicPremium -= ncbDiscount;
+
+  // Calculate add-on costs
+  const addonRates: Record<string, number> = {
+    "Zero Depreciation": 0.15,
+    "Engine Protection": 0.1,
+    "Roadside Assistance": 0.05,
+    "Consumables Cover": 0.08,
+    "Personal Accident Cover": 0.12,
+  };
+
+  const addonsTotal = addons.reduce((sum, addon) => {
+    return sum + basicPremium * (addonRates[addon] || 0);
+  }, 0);
+
+  // Calculate GST
+  const subtotal = basicPremium + addonsTotal;
+  const gst = subtotal * 0.18;
+  const total = subtotal + gst;
+
+  // Calculate other policy values
+  const policy_annual_premium = total;
+  const umbrella_limit = Math.max(Number(idv) * 1.5, 1000000); // 1.5x IDV or minimum 10L
+  const policy_csl = Math.min(umbrella_limit * 0.8, 5000000); // 80% of umbrella limit, max 50L
+  const total_insurance_amount = Number(idv) + policy_csl;
+
+  return {
+    basicPremium: Math.round(basicPremium),
+    addonsTotal: Math.round(addonsTotal),
+    gst: Math.round(gst),
+    total: Math.round(total),
+    policy_annual_premium: Math.round(policy_annual_premium),
+    umbrella_limit: Math.round(umbrella_limit),
+    policy_csl: Math.round(policy_csl),
+    total_insurance_amount: Math.round(total_insurance_amount),
+  };
 };
 
 const PolicyCustomization: React.FC<Props> = ({
@@ -26,6 +74,19 @@ const PolicyCustomization: React.FC<Props> = ({
       : [...currentAddons, addon];
     updateFormData({ addons: newAddons });
   };
+
+  // Calculate premiums whenever form data changes
+  const premiums = useMemo(() => calculatePremiums(formData), [formData]);
+
+  // Update formData with calculated values
+  React.useEffect(() => {
+    updateFormData({
+      policy_annual_premium: premiums.policy_annual_premium,
+      umbrella_limit: premiums.umbrella_limit,
+      policy_csl: premiums.policy_csl,
+      total_insurance_amount: premiums.total_insurance_amount,
+    });
+  }, [premiums, updateFormData]);
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8">
@@ -94,26 +155,48 @@ const PolicyCustomization: React.FC<Props> = ({
 
         <div className="mt-8 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            Premium Estimate
+            Premium Details
           </h3>
           <div className="space-y-2">
             <div className="flex justify-between">
               <span>Basic Premium</span>
-              <span>₹15,000</span>
+              <span>₹{premiums.basicPremium.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span>Add-ons</span>
-              <span>₹3,500</span>
+              <span>₹{premiums.addonsTotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span>GST (18%)</span>
-              <span>₹3,330</span>
+              <span>₹{premiums.gst.toLocaleString()}</span>
             </div>
             <div className="border-t border-gray-300 pt-2 mt-2">
               <div className="flex justify-between font-semibold">
                 <span>Total Premium</span>
-                <span>₹21,830</span>
+                <span>₹{premiums.total.toLocaleString()}</span>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2 pt-4 border-t border-gray-300">
+            <h4 className="font-semibold text-gray-800">
+              Policy Coverage Details
+            </h4>
+            <div className="flex justify-between">
+              <span>Annual Premium</span>
+              <span>₹{premiums.policy_annual_premium.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Umbrella Limit</span>
+              <span>₹{premiums.umbrella_limit.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Combined Single Limit</span>
+              <span>₹{premiums.policy_csl.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between font-semibold">
+              <span>Total Insurance Amount</span>
+              <span>₹{premiums.total_insurance_amount.toLocaleString()}</span>
             </div>
           </div>
         </div>

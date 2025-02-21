@@ -19,7 +19,8 @@ def apply():
         required_fields = [
             'vehicleType', 'registrationNumber', 'make', 'model', 'year',
             'name', 'mobile', 'email', 'address', 'city', 'state',
-            'idv', 'ncb', 'addons'
+            'idv', 'ncb', 'addons', 'policy_annual_premium', 'umbrella_limit', 
+            'policy_csl', 'total_insurance_amount'
         ]
 
         for field in required_fields:

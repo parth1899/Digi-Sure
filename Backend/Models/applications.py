@@ -40,6 +40,10 @@ class Application:
                 "idv": data["idv"],
                 "ncb": data["ncb"],
                 "addons": json.dumps(data["addons"]),  # Convert list to JSON string
+                "policy_annual_premium": data["policy_annual_premium"],
+                "umbrella_limit": data["umbrella_limit"],
+                "policy_csl": data["policy_csl"],
+                "total_insurance_amount": data["total_insurance_amount"],
                 # Timestamps
                 "created_at": datetime.now().isoformat(),
                 "updated_at": datetime.now().isoformat()
@@ -79,7 +83,11 @@ class Application:
                 policy_details = {
                     "idv": app["idv"],
                     "ncb": app["ncb"],
-                    "addons": json.loads(app["addons"])
+                    "addons": json.loads(app["addons"]),
+                    "policy_annual_premium": data["policy_annual_premium"],
+                    "umbrella_limit": data["umbrella_limit"],
+                    "policy_csl": data["policy_csl"],
+                    "total_insurance_amount": data["total_insurance_amount"]
                 }
                 return Application(
                     app["application_id"],
@@ -125,6 +133,15 @@ class Application:
                     "ncb": app["ncb"],
                     "addons": json.loads(app["addons"])
                 }
+                policy_details = {
+                    "idv": app["idv"],
+                    "ncb": app["ncb"],
+                    "addons": json.loads(app["addons"]),
+                    "policy_annual_premium": app["policy_annual_premium"],
+                    "umbrella_limit": app["umbrella_limit"],
+                    "policy_csl": app["policy_csl"],
+                    "total_insurance_amount": app["total_insurance_amount"]
+                }
                 return Application(
                     app["application_id"],
                     None,
@@ -168,7 +185,11 @@ class Application:
                 policy_details = {
                     "idv": app["idv"],
                     "ncb": app["ncb"],
-                    "addons": json.loads(app["addons"])
+                    "addons": json.loads(app["addons"]),
+                    "policy_annual_premium": app["policy_annual_premium"],
+                    "umbrella_limit": app["umbrella_limit"],
+                    "policy_csl": app["policy_csl"],
+                    "total_insurance_amount": app["total_insurance_amount"]
                 }
                 applications.append(Application(
                     app["application_id"],
