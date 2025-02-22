@@ -164,6 +164,7 @@ const PersonalInfo: React.FC = () => {
     field: keyof User;
     value: string;
     onChange: (field: keyof User, value: string) => void;
+    id?: string;
   }
 
   const InputField: React.FC<InputFieldProps> = ({
@@ -171,11 +172,16 @@ const PersonalInfo: React.FC = () => {
     field,
     value,
     onChange,
+    id = field.toString(),
   }) => (
     <div>
-      <label className="block text-sm text-gray-600">{label}</label>
+      <label htmlFor={id} className="block text-sm text-gray-600">
+        {label}
+      </label>
       <input
         type="text"
+        id={id}
+        name={id}
         value={value || ""}
         onChange={(e) => onChange(field, e.target.value)}
         className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -473,70 +479,147 @@ const PersonalInfo: React.FC = () => {
             </div>
           )}
         </div>
-        {editMode.otherDetails && tempData ? (
-          <>
-            <InputField
-              label="Sex"
-              field="otherDetails"
-              value={tempData.otherDetails.sex || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Date Of Birth"
-              field="otherDetails"
-              value={tempData?.otherDetails.dob || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Education Level"
-              field="otherDetails"
-              value={tempData?.otherDetails.education_level || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Occupation"
-              field="otherDetails"
-              value={tempData?.otherDetails.occupation || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Hobbies"
-              field="otherDetails"
-              value={tempData?.otherDetails.hobbies || ""}
-              onChange={handleChange}
-            />
-            <InputField
-              label="Relationship Status"
-              field="otherDetails"
-              value={tempData?.otherDetails.relationship || ""}
-              onChange={handleChange}
-            />
-          </>
-        ) : (
-          <>
-            <DisplayField
-              label="Sex"
-              value={user.otherDetails.sex || "Not provided"}
-            />
-            <DisplayField
-              label="Date Of Birth"
-              value={user.otherDetails.dob || "Not provided"}
-            />
-            <DisplayField
-              label="Education Level"
-              value={user.otherDetails.education_level}
-            />
-            <DisplayField
-              label="Occupation"
-              value={user.otherDetails.occupation}
-            />
-            <DisplayField label="Hobbies" value={user.otherDetails.hobbies} />
-            <DisplayField
-              label="Relationship Status"
-              value={user.otherDetails.relationship}
-            />
-          </>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {editMode.otherDetails && tempData ? (
+            <>
+              <InputField
+                label="Sex"
+                field="otherDetails"
+                value={tempData.otherDetails.sex || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: { ...prev.otherDetails, sex: value },
+                        }
+                      : null
+                  )
+                }
+                id="user-sex"
+              />
+              <InputField
+                label="Date Of Birth"
+                field="otherDetails"
+                value={tempData.otherDetails.dob || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: { ...prev.otherDetails, dob: value },
+                        }
+                      : null
+                  )
+                }
+                id="user-dob"
+              />
+              <InputField
+                label="Education Level"
+                field="otherDetails"
+                value={tempData.otherDetails.education_level || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: {
+                            ...prev.otherDetails,
+                            education_level: value,
+                          },
+                        }
+                      : null
+                  )
+                }
+                id="user-education"
+              />
+              <InputField
+                label="Occupation"
+                field="otherDetails"
+                value={tempData.otherDetails.occupation || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: {
+                            ...prev.otherDetails,
+                            occupation: value,
+                          },
+                        }
+                      : null
+                  )
+                }
+                id="user-occupation"
+              />
+              <InputField
+                label="Hobbies"
+                field="otherDetails"
+                value={tempData.otherDetails.hobbies || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: {
+                            ...prev.otherDetails,
+                            hobbies: value,
+                          },
+                        }
+                      : null
+                  )
+                }
+                id="user-hobbies"
+              />
+              <InputField
+                label="Relationship Status"
+                field="otherDetails"
+                value={tempData.otherDetails.relationship || ""}
+                onChange={(_, value) =>
+                  setTempData((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          otherDetails: {
+                            ...prev.otherDetails,
+                            relationship: value,
+                          },
+                        }
+                      : null
+                  )
+                }
+                id="user-relationship"
+              />
+            </>
+          ) : (
+            <>
+              <DisplayField
+                label="Sex"
+                value={user.otherDetails.sex || "Not provided"}
+              />
+              <DisplayField
+                label="Date Of Birth"
+                value={user.otherDetails.dob || "Not provided"}
+              />
+              <DisplayField
+                label="Education Level"
+                value={user.otherDetails.education_level || "Not provided"}
+              />
+              <DisplayField
+                label="Occupation"
+                value={user.otherDetails.occupation || "Not provided"}
+              />
+              <DisplayField
+                label="Hobbies"
+                value={user.otherDetails.hobbies || "Not provided"}
+              />
+              <DisplayField
+                label="Relationship Status"
+                value={user.otherDetails.relationship || "Not provided"}
+              />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
