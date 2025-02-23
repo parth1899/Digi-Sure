@@ -1,6 +1,15 @@
+Here is the updated README with contributors included:
+
 # Hack-AI-Thon-Project
 
 This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**.
+
+## Technology Stack
+
+This project leverages the following technologies:
+- **TypeScript** (77.7%)
+- **Python** (20.9%)
+- **Other** (1.4%)
 
 ## Database Setup
 
@@ -19,14 +28,54 @@ CREATE INDEX user_surname IF NOT EXISTS
 FOR (u:User) ON (u.surname);
 ```
 
-### Project Overview
+## Installation & Setup
 
-(Add a brief description of what your project does and its key features.)
+Follow these steps to set up the project:
 
-### Installation & Setup
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/parthpetkar/Hack-AI-Thon-Project.git
+   ```
+2. **Navigate to the project directory:**
+   ```sh
+   cd Hack-AI-Thon-Project
+   ```
+3. **Install dependencies:**
+   ```sh
+   npm install
+   ```
 
-(Include instructions for setting up the project, including dependencies.)
-
-### Usage
+## Usage
 
 (Explain how to use your project.)
+
+## Frontend Setup
+
+The frontend uses React + TypeScript + Vite. This setup provides a minimal configuration to get React working with Vite, HMR, and some ESLint rules.
+
+For more information, refer to the [Frontend README](https://github.com/parthpetkar/Hack-AI-Thon-Project/blob/ceccbf25d606490d50b1d2bcc8276fb779015ed4/Frontend/README.md).
+
+## Contributors
+
+We would like to thank the following contributors for their hard work:
+
+- [parthpetkar](https://github.com/parthpetkar) - 12 contributions
+- [parth1899](https://github.com/parth1899) - 9 contributions
+- [adideo03](https://github.com/adideo03) - 8 contributions
+- [aryaalukar](https://github.com/arya911) - 7 contributions
+
+## Contributing
+
+We welcome contributions from the community. Please follow these steps to contribute:
+
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature-branch`)
+3. Commit your changes (`git commit -m 'Add a feature'`)
+4. Push to the branch (`git push origin feature-branch`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Feel free to customize the sections as per your project's specifics.
