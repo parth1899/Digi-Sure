@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FileText, User, ClipboardList, X, Upload, File } from "lucide-react";
-import { Document } from "../../types";
-// import { Document, UploadFormData } from "../../types";
+
+type DocumentData = {
+  file_name: string;
+  file_path: string;
+  predicted_label: string;
+  confidence: number;
+  upload_date: string;
+};
 
 type UploadFormData = {
   documentType: string;
@@ -9,57 +15,82 @@ type UploadFormData = {
   file: File | null;
 };
 
-// const DOCUMENT_TYPES = ['Policy', 'KYC', 'Medical', 'Claim', 'Other'] as const;
 const DOCUMENT_TYPES = ["Policy", "KYC", "Medical", "Claim", "Other"] as const;
-
-const documents: Document[] = [
-  {
-    id: "1",
-    name: "Policy Documents",
-    icon: FileText,
-    count: 3,
-    type: "Policy",
-    uploadedOn: new Date("2024-03-10"),
-    size: 1024,
-  },
-  {
-    id: "2",
-    name: "KYC Documents",
-    icon: User,
-    count: 2,
-    type: "KYC",
-    uploadedOn: new Date("2024-03-09"),
-    size: 2048,
-  },
-  {
-    id: "3",
-    name: "Medical Reports",
-    icon: FileText,
-    count: 1,
-    type: "Medical",
-    uploadedOn: new Date("2024-03-08"),
-    size: 3072,
-  },
-  {
-    id: "4",
-    name: "Claim Documents",
-    icon: ClipboardList,
-    count: 1,
-    type: "Claim",
-    uploadedOn: new Date("2024-03-07"),
-    size: 512,
-  },
-];
 
 const Documents: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [documentsList, setDocumentsList] = useState<Document[]>(documents);
+  const [documentsList, setDocumentsList] = useState<DocumentData[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<UploadFormData>({
     documentType: "",
     documentName: "",
     file: null,
   });
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:8081/docs/get_images', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch documents');
+      
+      const data = await response.json();
+      setDocumentsList(data.images);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      alert('Failed to fetch documents. Please try again.');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.file) return;
+
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      const formDataObj = new FormData();
+      formDataObj.append('file', formData.file);
+      
+      const uploadResponse = await fetch('http://127.0.0.1:8081/docs/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataObj
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload document');
+      }
+
+      const result = await uploadResponse.json();
+      
+      // Show the prediction result
+      alert(`Document analyzed!\nResult: ${result.predicted_label}\nConfidence: ${(result.confidence * 100).toFixed(2)}%`);
+
+      // Refresh the documents list
+      await fetchDocuments();
+
+      setIsModalOpen(false);
+      setFormData({ documentType: "", documentName: "", file: null });
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert('Failed to upload document. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -82,10 +113,10 @@ const Documents: React.FC = () => {
   };
 
   const handleFile = (file: File) => {
-    if (file.type === "application/pdf" || file.type.startsWith("image/")) {
+    if (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/jpg") {
       setFormData((prev) => ({ ...prev, file }));
     } else {
-      alert("Please upload only PDF or image files");
+      alert("Please upload only PNG, JPG, or JPEG files");
     }
   };
 
@@ -101,25 +132,6 @@ const Documents: React.FC = () => {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.documentType || !formData.file) return;
-
-    const newDocument: Document = {
-      id: Date.now().toString(),
-      name: formData.documentName || formData.file.name,
-      type: formData.documentType,
-      icon: FileText,
-      count: 1,
-      uploadedOn: new Date(),
-      size: formData.file.size,
-    };
-
-    setDocumentsList((prev) => [...prev, newDocument]);
-    setIsModalOpen(false);
-    setFormData({ documentType: "", documentName: "", file: null });
-  };
-
   return (
     <div className="space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -132,32 +144,34 @@ const Documents: React.FC = () => {
             Upload Document
           </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {documentsList.map((doc) => (
-            <div
-              key={doc.id}
-              className="border rounded-lg p-4 hover:border-blue-500 transition-colors"
-            >
-              <div className="flex items-center space-x-3">
-                {React.createElement(doc.icon)}
-                <div className="flex-1">
-                  <p className="font-medium">{doc.name}</p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>
-                      {doc.count} document{doc.count !== 1 ? "s" : ""}
-                    </span>
-                    {doc.size && <span>• {formatFileSize(doc.size)}</span>}
+        {isLoading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {documentsList.map((doc) => (
+              <div
+                key={doc.file_path}
+                className="border rounded-lg p-4 hover:border-blue-500 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <FileText className="text-gray-500" />
+                  <div className="flex-1">
+                    <p className="font-medium">{doc.file_name}</p>
+                    <div className="flex flex-col space-y-1 text-sm">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs 
+                        ${doc.predicted_label === 'Real' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {doc.predicted_label} ({(doc.confidence * 100).toFixed(2)}% confidence)
+                      </span>
+                      <span className="text-gray-500">
+                        Uploaded on {new Date(doc.upload_date).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
-                  {doc.uploadedOn && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Uploaded on {doc.uploadedOn.toLocaleDateString()}
-                    </p>
-                  )}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Upload Modal */}
@@ -175,64 +189,18 @@ const Documents: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Document Type
-                </label>
-                <select
-                  required
-                  value={formData.documentType}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      documentType: e.target.value as Document["type"],
-                    }))
-                  }
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="">Select type</option>
-                  {DOCUMENT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Document Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.documentName}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      documentName: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Enter custom name"
-                />
-              </div>
-
               <div
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors
-                  ${
-                    dragActive
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300"
-                  }
+                  ${dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"}
                   ${formData.file ? "bg-green-50" : ""}`}
               >
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg"
+                  accept=".jpg,.jpeg,.png"
                   onChange={handleFileInput}
                   className="hidden"
                   id="file-upload"
@@ -255,11 +223,11 @@ const Documents: React.FC = () => {
                     <>
                       <Upload className="w-8 h-8 text-gray-400 mb-2" />
                       <p className="text-sm text-gray-600">
-                        Drag & drop your file here or{" "}
+                        Drag & drop your image here or{" "}
                         <span className="text-blue-500">browse</span>
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Supports PDF, JPG, JPEG
+                        Supports PNG, JPG, JPEG
                       </p>
                     </>
                   )}
@@ -269,11 +237,11 @@ const Documents: React.FC = () => {
               <div className="flex space-x-3 pt-4">
                 <button
                   type="submit"
-                  disabled={!formData.documentType || !formData.file}
+                  disabled={!formData.file || isLoading}
                   className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 
                     disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
-                  Upload
+                  {isLoading ? "Analyzing..." : "Upload & Analyze"}
                 </button>
                 <button
                   type="button"

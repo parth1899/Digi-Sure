@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("personal");
 
   const user: User = {
-    name: "Rajesh Kumar",
+    name: "",
     customerId: "SBI87654321",
     email: "rajesh.kumar@email.com",
     phone: "+91 98765 43210",

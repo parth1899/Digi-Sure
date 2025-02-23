@@ -1,101 +1,134 @@
-import os
-from datetime import datetime
 from flask import Blueprint, request, jsonify
-from werkzeug.utils import secure_filename
 from utils.auth import token_required, get_user_from_token
-from database.connection import Neo4jConnection 
+from database.connection import Neo4jConnection
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from PIL import Image, ImageChops, ImageEnhance
+import os
 from config import Config
 
-document_bp = Blueprint('document', __name__)
+# Load your pre-trained model
+model = load_model('routes/image_forgery_detection_casia2.h5')
+image_size = (128, 128)
 
-def check_existing_aadhaar(email, db_session):
-    """Check if user already has an Aadhaar card uploaded"""
-    result = db_session.run(
-        """
-        MATCH (user:User {email: $email})-[:HAS_AADHAAR_CARD]->(file:File)
-        RETURN file.path as file_path
-        """,
-        email=email
-    )
-    return result.single() is not None
-@document_bp.route('/upload-aadhaar-card', methods=['POST'])
+def convert_to_ela_image(path, quality=90):
+    temp_filename = 'temp_file.jpg'
+    image = Image.open(path).convert('RGB')
+    image.save(temp_filename, 'JPEG', quality=quality)
+    temp_image = Image.open(temp_filename)
+    ela_image = ImageChops.difference(image, temp_image)
+    extrema = ela_image.getextrema()
+    max_diff = max([ex[1] for ex in extrema])
+    if max_diff == 0:
+        max_diff = 1
+    scale = 255.0 / max_diff
+    ela_image = ImageEnhance.Brightness(ela_image).enhance(scale)
+    return ela_image
+
+def prepare_image(image_path):
+    ela_image = convert_to_ela_image(image_path)
+    ela_image = ela_image.resize(image_size)
+    ela_array = np.array(ela_image).astype('float32') / 255.0
+    ela_array = np.expand_dims(ela_array, axis=0) 
+    return ela_array
+
+def predict_image(image_path):
+    image = prepare_image(image_path)
+    prediction = model.predict(image)
+    predicted_class = np.argmax(prediction)
+    class_labels = ['Fake', 'Real']
+    return class_labels[predicted_class], float(np.max(prediction)), prediction.tolist()
+
+# Create a blueprint for the forgery detection endpoints
+forgery_bp = Blueprint('docs', __name__)
+
+@forgery_bp.route('/upload', methods=['POST'])
 @token_required
-def upload_aadhar_card(current_user):
+def detect_forgery(current_user_email):  # Now receives email instead of user object
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file in the request.'}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected.'}), 400
+        
+    # Save the file temporarily
+    temp_path = os.path.join(Config.UPLOAD_FOLDER, file.filename)
+    file.save(temp_path)
+    
     try:
-        # Get the authorization token from header
-        auth_header = request.headers.get('Authorization')
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'message': 'Missing or invalid authorization token'}), 401
+        predicted_label, confidence, full_confidence = predict_image(temp_path)
         
-        token = auth_header.split(' ')[1]
-        email = get_user_from_token(token)
+        neo4j = Neo4jConnection()
+        # Modified query to match user by email
+        query = """
+        MATCH (u:User {email: $email})
+        CREATE (d:Document {
+            file_path: $file_path,
+            file_name: $file_name,
+            predicted_label: $predicted_label,
+            confidence: $confidence,
+            upload_date: datetime()
+        })
+        CREATE (u)-[:HAS_DOC]->(d)
+        RETURN d
+        """
+        params = {
+            'email': current_user_email,
+            'file_path': temp_path,
+            'file_name': file.filename,
+            'predicted_label': predicted_label,
+            'confidence': confidence
+        }
+        result = neo4j.execute_query(query, params)
         
-        if not email:
-            return jsonify({'message': 'Invalid token or user not found'}), 401
-
-        # Check if the 'file' part is in the request
-        if 'file' not in request.files:
-            return jsonify({'message': 'No file part'}), 400
+        return jsonify({
+            'predicted_label': predicted_label,
+            'confidence': confidence,
+            'full_confidence': full_confidence,
+            'file_name': file.filename
+        }), 200
         
-        file = request.files['file']
-        
-        # Check if the file has no name
-        if file.filename == '':
-            return jsonify({'message': 'No selected file'}), 400
-        
-        # Validate the file type
-        if not allowed_file(file.filename):
-            return jsonify({'message': 'Invalid file format'}), 400
-
-        # Create a unique filename using email and timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        original_extension = file.filename.rsplit('.', 1)[1].lower()
-        filename = f"aadhaar_{email}_{timestamp}.{original_extension}"
-        filename = secure_filename(filename)
-
-        # Ensure upload directory exists
-        os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-        
-        file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
-        file.save(file_path)
-
-        # Database operations
-        db = Neo4jConnection()
-        with db.get_session() as session:
-            if check_existing_aadhaar(email, session):
-                return jsonify({
-                    'message': 'Aadhaar card already exists for this user. Please delete the existing one before uploading a new card.'
-                }), 409  # 409 Conflict status code
-            result = session.run(
-                """
-                MATCH (user:User {email: $email})
-                MERGE (file:File {path: $file_path})
-                ON CREATE SET file.uploaded_at = $timestamp
-                MERGE (user)-[r:HAS_AADHAAR_CARD]->(file)
-                RETURN user.email as user_email, file.path as file_path
-                """,
-                email=email,
-                file_path=file_path,
-                timestamp=datetime.now().isoformat()
-            )
-            
-            record = result.single()
-            if not record:
-                os.remove(file_path)
-                return jsonify({'message': 'Failed to create relationship in database'}), 500
-            
-            return jsonify({
-                'message': 'Aadhaar card uploaded successfully',
-                'file_path': file_path,
-                'email': email
-            })
-            
     except Exception as e:
-        # Clean up the uploaded file if any operation fails
-        if 'file_path' in locals() and os.path.exists(file_path):
-            os.remove(file_path)
-        return jsonify({'message': f'Error processing request: {str(e)}'}), 500
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return jsonify({'error': str(e)}), 500
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+@forgery_bp.route('/get_images', methods=['GET'])
+@token_required
+def get_images(current_user_email):  # Now receives email instead of user object
+    try:
+        print("hiii")
+        neo4j = Neo4jConnection()
+        print("HII")
+        token = request.headers.get('Authorization').split(' ')[1]
+        current_user_email = get_user_from_token(token)
+        # Modified query to match user by email
+        query = """
+        MATCH (u:User {email: $email})-[:HAS_DOC]->(d:Document)
+        RETURN d.file_name AS file_name,
+               d.file_path AS file_path,
+               d.predicted_label AS predicted_label,
+               d.confidence AS confidence,
+               d.upload_date AS upload_date
+        ORDER BY d.upload_date DESC
+        """
+        params = {'email': current_user_email}
+        result = neo4j.execute_query(query, params)
+        
+        images = [
+            {
+                'file_name': record['file_name'],
+                'file_path': record['file_path'],
+                'predicted_label': record['predicted_label'],
+                'confidence': record['confidence'],
+                'upload_date': record['upload_date'].isoformat() if record['upload_date'] else None
+            }
+            for record in result
+        ]
+        
+        return jsonify({'images': images}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    

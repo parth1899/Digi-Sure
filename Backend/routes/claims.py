@@ -3,11 +3,11 @@ from flask import Blueprint, request, jsonify
 from database.connection import Neo4jConnection
 from utils.auth import token_required
 import uuid
-from utils.detector import FraudDetector
+# from utils.detector import FraudDetector
 
 claims_bp = Blueprint('claims', __name__)
 neo4j = Neo4jConnection()
-fraud_detector = FraudDetector()
+# fraud_detector = FraudDetector()
 
 @claims_bp.route('/detect', methods=['POST'])
 @token_required
