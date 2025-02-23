@@ -195,5 +195,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vs
 
 Backend/uploads/
