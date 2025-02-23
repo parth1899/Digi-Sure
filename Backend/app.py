@@ -4,6 +4,7 @@ from routes.document import document_bp
 from routes.apply import apply_bp
 from routes.profile import profile_bp
 from routes.dashboard import dashboard_bp
+from routes.claims import claims_bp
 from routes.admin import admin_bp
 import os
 from flask_cors import CORS
@@ -22,6 +23,7 @@ app.register_blueprint(document_bp, url_prefix='/docs')
 app.register_blueprint(apply_bp, url_prefix='/apply')
 app.register_blueprint(profile_bp, url_prefix='/api')
 app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+app.register_blueprint(claims_bp, url_prefix='/claims')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 
 @app.route('/')
