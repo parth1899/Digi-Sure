@@ -3,11 +3,10 @@ from flask import Blueprint, request, jsonify
 from database.connection import Neo4jConnection
 from utils.auth import token_required
 import uuid
-# from utils.detector import FraudDetector
+from detector import predict_from_neo4j
 
 claims_bp = Blueprint('claims', __name__)
 neo4j = Neo4jConnection()
-# fraud_detector = FraudDetector()
 
 @claims_bp.route('/detect', methods=['POST'])
 @token_required
@@ -85,6 +84,7 @@ def create_claim(current_user_email):
     }
     
     result = neo4j.execute_query(query, params)
+    predict_from_neo4j()
     return jsonify({'claim_id': result[0]['claim_id']}), 201
 
 @claims_bp.route('/view', methods=['GET'])
