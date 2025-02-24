@@ -1,6 +1,9 @@
-Here is the updated README with contributors included:
 
 # Hack-AI-Thon-Project
+
+## About The Project
+
+This innovative insurance platform transforms fraud detection for verified document retrieval using advanced AI-powered mechanisms. By reducing the reliance on manual verification, the system enhances efficiency while delivering real-time fraud analysis through multiple layers of security checks.
 
 This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**.
 
