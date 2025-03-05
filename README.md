@@ -9,11 +9,7 @@ This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**
 
 ## Demo Video
 
-<video width="640" height="360" controls>
-  <source src="[https://drive.google.com/uc?export=download&id=YOUR_FILE_ID](https://drive.google.com/uc?export=download&id=1T1TcV0jpimszssDMS5zSuSDQGqfihxVI" type="video/quicktime">
-  Your browser does not support the video tag.
-</video>
-
+https://github.com/user-attachments/assets/fe1478f6-ee3b-4267-9498-aa783a4aa61f
 
 ## Technology Stack
 
