@@ -10,7 +10,7 @@ This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**
 ## Demo Video
 
 <video width="640" height="360" controls>
-  <source src="Frontend/assets/FIN_SUB.mov" type="video/mp4">
+  <source src="[https://drive.google.com/uc?export=download&id=YOUR_FILE_ID](https://drive.google.com/uc?export=download&id=1T1TcV0jpimszssDMS5zSuSDQGqfihxVI" type="video/quicktime">
   Your browser does not support the video tag.
 </video>
 
