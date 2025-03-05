@@ -7,6 +7,14 @@ This innovative insurance platform transforms fraud detection for verified docum
 
 This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**.
 
+## Demo Video
+
+<video width="640" height="360" controls>
+  <source src="Frontend/assets/FIN_SUB.mov" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+
 ## Technology Stack
 
 This project leverages the following technologies:
