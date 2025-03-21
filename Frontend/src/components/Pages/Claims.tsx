@@ -619,6 +619,7 @@ const Claims: React.FC = () => {
       }
 
       const fetchedClaims = await response.json();
+      console.log(fetchedClaims);
       setClaims(fetchedClaims);
     } finally {
       setLoading(false);
@@ -773,9 +774,7 @@ const Claims: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-gray-600">Claim Amount</p>
-                  <p className="font-medium text-blue-900">
-                    ₹{claim.amount.toLocaleString()}
-                  </p>
+                  <p className="font-medium text-blue-900">₹{claim.amount}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Type</p>

@@ -12,6 +12,7 @@ def calculate_forgery_score(claim):
     """
     fraud_prediction = claim.get('fraudPrediction', 0)
     fraud_probability = claim.get('fraudProbability', 0.0)
+    print(fraud_probability)
     fraud_reason = claim.get('fraudReason', "")
 
     # Base score: scale fraud probability to percentage
