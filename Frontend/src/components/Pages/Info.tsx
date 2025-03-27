@@ -3,6 +3,7 @@ import { Shield, Pencil, Check, X } from "lucide-react";
 import axios from "axios";
 import { User, Insurance } from "../../types";
 import { useNavigate } from "react-router-dom";
+import { InputField, DisplayField } from "../Utils/InputFeild";
 
 const API_BASE_URL = "http://localhost:8081/api";
 
@@ -28,41 +29,46 @@ const PersonalInfo: React.FC = () => {
     return { headers: { Authorization: `Bearer ${token}` } };
   };
 
-  const apiRequest = async <T,>(
-    method: string,
-    endpoint: string,
-    data?: unknown
-  ): Promise<T> => {
-    try {
-      const config = getAuthConfig();
-      const url = `${API_BASE_URL}${endpoint}`;
-      let response;
-      if (method.toLowerCase() === "get") {
-        response = await axios.get(url, config);
-      } else if (method.toLowerCase() === "put") {
-        response = await axios.put(url, data, config);
-      } else {
-        throw new Error(`Unsupported method: ${method}`);
+  const apiRequest = React.useCallback(
+    async <T,>(
+      method: string,
+      endpoint: string,
+      data?: unknown
+    ): Promise<T> => {
+      try {
+        const config = getAuthConfig();
+        const url = `${API_BASE_URL}${endpoint}`;
+        let response;
+        if (method.toLowerCase() === "get") {
+          response = await axios.get(url, config);
+        } else if (method.toLowerCase() === "put") {
+          response = await axios.put(url, data, config);
+        } else {
+          throw new Error(`Unsupported method: ${method}`);
+        }
+        return response.data;
+      } catch (err: unknown) {
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/", {
+            state: {
+              message: "Your session has expired. Please log in again.",
+            },
+          });
+          throw new Error("Authentication failed. Redirecting to login...");
+        }
+        const errorMessage =
+          (axios.isAxiosError(err) && err.response?.data?.message) ||
+          (err as Error).message ||
+          "An unknown error occurred";
+        setError(errorMessage);
+        throw err;
       }
-      return response.data;
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/", {
-          state: { message: "Your session has expired. Please log in again." },
-        });
-        throw new Error("Authentication failed. Redirecting to login...");
-      }
-      const errorMessage =
-        (axios.isAxiosError(err) && err.response?.data?.message) ||
-        (err as Error).message ||
-        "An unknown error occurred";
-      setError(errorMessage);
-      throw err;
-    }
-  };
+    },
+    [navigate]
+  );
 
-  const fetchProfile = async () => {
+  const fetchProfile = React.useCallback(async () => {
     try {
       const userData = await apiRequest<User>("get", "/profile");
       setUser(userData);
@@ -74,9 +80,9 @@ const PersonalInfo: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiRequest]);
 
-  const fetchInsurancePolicies = async () => {
+  const fetchInsurancePolicies = React.useCallback(async () => {
     try {
       const policies = await apiRequest<Insurance[]>(
         "get",
@@ -86,7 +92,7 @@ const PersonalInfo: React.FC = () => {
     } catch (err) {
       console.error("Failed to fetch insurance policies:", err);
     }
-  };
+  }, [apiRequest]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -98,7 +104,7 @@ const PersonalInfo: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [fetchProfile, fetchInsurancePolicies]);
 
   const handleEdit = (section: keyof typeof editMode) => {
     setEditMode((prev) => ({ ...prev, [section]: true }));
@@ -136,12 +142,12 @@ const PersonalInfo: React.FC = () => {
         case "otherDetails":
           endpoint = "/profile/other-details";
           data = {
-            sex: tempData?.otherDetails.sex,
-            dob: tempData?.otherDetails.dob,
-            education_level: tempData?.otherDetails.education_level,
-            occupation: tempData?.otherDetails.occupation,
-            hobbies: tempData?.otherDetails.hobbies,
-            relationship: tempData?.otherDetails.relationship,
+            sex: tempData?.sex,
+            dob: tempData?.dob,
+            education_level: tempData?.education_level,
+            occupation: tempData?.occupation,
+            hobbies: tempData?.hobbies,
+            relationship: tempData?.relationship,
           };
           break;
       }
@@ -158,37 +164,6 @@ const PersonalInfo: React.FC = () => {
   const handleChange = (field: keyof User, value: string) => {
     setTempData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
-
-  interface InputFieldProps {
-    label: string;
-    field: keyof User;
-    value: string;
-    onChange: (field: keyof User, value: string) => void;
-  }
-
-  const InputField: React.FC<InputFieldProps> = ({
-    label,
-    field,
-    value,
-    onChange,
-  }) => (
-    <div>
-      <label className="block text-sm text-gray-600">{label}</label>
-      <input
-        type="text"
-        value={value || ""}
-        onChange={(e) => onChange(field, e.target.value)}
-        className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
-    </div>
-  );
-
-  const DisplayField = ({ label, value }: { label: string; value: string }) => (
-    <div>
-      <label className="block text-sm text-gray-600">{label}</label>
-      <p className="text-gray-900 font-medium">{value || "Not provided"}</p>
-    </div>
-  );
 
   if (isLoading)
     return (
@@ -286,7 +261,9 @@ const PersonalInfo: React.FC = () => {
       {/* Banking & Identity Details */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between items-start mb-6">
-          <h3 className="text-lg font-semibold">Banking & Identity Details</h3>
+          <h3 className="text-lg font-semibold">
+            Banking &amp; Identity Details
+          </h3>
           {!editMode.banking ? (
             <button
               onClick={() => handleEdit("banking")}
@@ -443,6 +420,8 @@ const PersonalInfo: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Other Details */}
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-lg font-semibold">Other Details</h3>
@@ -477,63 +456,63 @@ const PersonalInfo: React.FC = () => {
           <>
             <InputField
               label="Sex"
-              field="otherDetails"
-              value={tempData.otherDetails.sex || ""}
+              field="sex"
+              value={tempData.sex || ""}
               onChange={handleChange}
             />
             <InputField
               label="Date Of Birth"
-              field="otherDetails"
-              value={tempData?.otherDetails.dob || ""}
+              field="dob"
+              value={tempData.dob || ""}
               onChange={handleChange}
             />
             <InputField
               label="Education Level"
-              field="otherDetails"
-              value={tempData?.otherDetails.education_level || ""}
+              field="education_level"
+              value={tempData.education_level || ""}
               onChange={handleChange}
             />
             <InputField
               label="Occupation"
-              field="otherDetails"
-              value={tempData?.otherDetails.occupation || ""}
+              field="occupation"
+              value={tempData.occupation || ""}
               onChange={handleChange}
             />
             <InputField
               label="Hobbies"
-              field="otherDetails"
-              value={tempData?.otherDetails.hobbies || ""}
+              field="hobbies"
+              value={tempData.hobbies || ""}
               onChange={handleChange}
             />
             <InputField
               label="Relationship Status"
-              field="otherDetails"
-              value={tempData?.otherDetails.relationship || ""}
+              field="relationship"
+              value={tempData.relationship || ""}
               onChange={handleChange}
             />
           </>
         ) : (
           <>
-            <DisplayField
-              label="Sex"
-              value={user.otherDetails.sex || "Not provided"}
-            />
+            <DisplayField label="Sex" value={user.sex || "Not provided"} />
             <DisplayField
               label="Date Of Birth"
-              value={user.otherDetails.dob || "Not provided"}
+              value={user.dob || "Not provided"}
             />
             <DisplayField
               label="Education Level"
-              value={user.otherDetails.education_level}
+              value={user.education_level || "Not provided"}
             />
             <DisplayField
               label="Occupation"
-              value={user.otherDetails.occupation}
+              value={user.occupation || "Not provided"}
             />
-            <DisplayField label="Hobbies" value={user.otherDetails.hobbies} />
+            <DisplayField
+              label="Hobbies"
+              value={user.hobbies || "Not provided"}
+            />
             <DisplayField
               label="Relationship Status"
-              value={user.otherDetails.relationship}
+              value={user.relationship || "Not provided"}
             />
           </>
         )}
