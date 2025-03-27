@@ -174,56 +174,60 @@ def store_prediction_in_claim_management(driver, customer_id, prediction, fraud_
         session.run(update_query, customer_id=customer_id, prediction=int(prediction), fraud_prob=float(fraud_prob), fraud_reason=fraud_reason)
 
 # --- Prediction Pipeline ---
-def predict_from_neo4j(model_path=MODEL_SAVE_PATH):
-    # Initialize Neo4j driver (update credentials as needed)
+def predict_from_neo4j(customer_id, model_path=MODEL_SAVE_PATH):
+    # Initialize Neo4j driver
     neo4j_conn = Neo4jConnection()
     
-    query = """
-    MATCH (u:User {customerId: "CUS-EBA4-60EC-96E5"})
-    OPTIONAL MATCH (u)-[:INSURANCE]->(a:Application)
-    OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
-    OPTIONAL MATCH (u)-[:HAS_DETAILS]->(o:OtherDetails)
-    OPTIONAL MATCH (u)-[:HAS_CLAIMS]->(cm:ClaimManagement)
-    OPTIONAL MATCH (cm)-[:MANAGES]->(c:Claim)
-    OPTIONAL MATCH (c)-[:OCCURRED_ON|INVOLVED_IN]->(i:Incident)
-    RETURN u, a, b, o, cm, c, i
+    # Use customer_id in the query
+    query = f"""
+    MATCH (cust:Customer {{id: $customer_id}})
+    OPTIONAL MATCH (cust)-[:INVOLVED_IN]->(i:Incident)
+    OPTIONAL MATCH (cust)<-[:FILED_BY]-(c:Claim)
+    OPTIONAL MATCH (c)<-[:MANAGES]-(cm:ClaimManagement)
+    OPTIONAL MATCH (cust)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
+    OPTIONAL MATCH (cust)-[:HAS_DETAILS]->(o:OtherDetails)
+    RETURN cust, c, cm, i, b, o
     """
     
-    df_raw = fetch_data_from_neo4j(neo4j_conn.driver, query)
+    params = {'customer_id': customer_id}
+    
+    df_raw = fetch_data_from_neo4j(neo4j_conn.driver, query, params)
+    
     if df_raw.empty:
-        print("No data fetched from Neo4j.")
+        print(f"No data fetched for customer {customer_id}.")
         neo4j_conn.driver.close()
         return
     
     neo4j_data = df_raw.iloc[0].to_dict()
     features_dict = transform_neo4j_data_for_model(neo4j_data)
     
-    # Reorder and select features to match the training data
+    # Prepare features for the model
     df_features = pd.DataFrame([features_dict]).reindex(columns=PREDICTION_COLUMNS, fill_value=0)
     
     # Convert object columns to categorical for XGBoost
     for col in df_features.select_dtypes(include='object').columns:
         df_features[col] = df_features[col].astype('category')
     
+    # Load the model and make predictions
     model = joblib.load(model_path)
     prediction = model.predict(df_features)
     fraud_prob = model.predict_proba(df_features)[:, 1] if hasattr(model, "predict_proba") else None
     
-    print("Prediction (0: Not Fraud, 1: Fraud):", prediction[0])
+    print(f"Prediction for {customer_id} (0: Not Fraud, 1: Fraud):", prediction[0])
     if fraud_prob is not None:
-        print("Fraud Probability:", fraud_prob[0])
+        print(f"Fraud Probability: {fraud_prob[0]}")
     
-    # Determine fraud reason based on prediction
+    # Determine fraud reason
     fraud_reason = (
         "Claim flagged as fraudulent based on risk factors."
         if prediction[0] == 1
         else "Claim appears legitimate based on risk assessment."
     )
     
-    # Store the prediction, probability, and reason in the ClaimManagement node
+    # Store prediction in ClaimManagement node
     store_prediction_in_claim_management(
         neo4j_conn.driver,
-        customer_id="CUS-EBA4-60EC-96E5",
+        customer_id=customer_id,
         prediction=prediction[0],
         fraud_prob=fraud_prob[0] if fraud_prob is not None else 0,
         fraud_reason=fraud_reason

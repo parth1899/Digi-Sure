@@ -11,9 +11,9 @@ def calculate_forgery_score(claim):
     Lower scores indicate lower risk.
     """
     fraud_prediction = claim.get('fraudPrediction', 0)
-    fraud_probability = claim.get('fraudProbability', 0.0)
-    print(fraud_probability)
-    fraud_reason = claim.get('fraudReason', "")
+    fraud_probability = claim.get('fraudProbability') or 0.0
+    # Ensure fraud_reason is a string even if it's None
+    fraud_reason = claim.get('fraudReason') or ""
 
     # Base score: scale fraud probability to percentage
     score = fraud_probability * 100
@@ -27,6 +27,7 @@ def calculate_forgery_score(claim):
         score *= 0.8
 
     return round(score, 2)
+
 
 def get_fraud_color_code(claim):
     """

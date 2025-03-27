@@ -18,14 +18,12 @@ def create_claim(current_user_email):
     query = """
     MATCH (u:User {email: $email})
     CREATE 
-        // Create central claim management node if not exists
         (cm:ClaimManagement {
             id: $management_id,
             status: 'In Progress',
             last_updated: $created_date,
             claim_type: $incident_type
         }),
-        // Create claim node
         (c:Claim {
             id: $claim_id,
             type: $incident_type,
@@ -35,9 +33,7 @@ def create_claim(current_user_email):
             property_amount: $property_claim,
             vehicle_amount: $vehicle_claim
         }),
-        // Create customer node
         (cust:Customer {id: $customer_id}),
-        // Create incident node
         (i:Incident {
             id: $incident_id,
             date: $incident_date,
@@ -50,13 +46,12 @@ def create_claim(current_user_email):
             bodily_injuries: $bodily_injuries,
             police_report: $police_report
         }),
-        // Create relationships
         (u)-[:HAS_CLAIMS]->(cm),
         (cm)-[:MANAGES]->(c),
         (c)-[:FILED_BY]->(cust),
         (c)-[:OCCURRED_ON]->(i),
         (cust)-[:INVOLVED_IN]->(i)
-    RETURN c.id as claim_id
+    RETURN c.id as claim_id, cust.id AS customer_id
     """
     
     params = {
@@ -84,41 +79,54 @@ def create_claim(current_user_email):
     }
     
     result = neo4j.execute_query(query, params)
-    predict_from_neo4j()
+    
+    # Get the customer ID from the query result
+    customer_id = result[0]['customer_id']
+    
+    # Pass the customer ID to the fraud detection function
+    predict_from_neo4j(customer_id=customer_id)
+    
     return jsonify({'claim_id': result[0]['claim_id']}), 201
+
 
 @claims_bp.route('/view', methods=['GET'])
 @token_required
 def get_claims(current_user_email):
+    # Query to fetch claim details along with customer ID and fraud assessment
     query = """
     MATCH (u:User {email: $email})-[:HAS_CLAIMS]->(cm:ClaimManagement)
     MATCH (cm)-[:MANAGES]->(c:Claim)-[:OCCURRED_ON]->(i:Incident)
-    RETURN cm, c, i
+    OPTIONAL MATCH (c)-[:FILED_BY]->(cust:Customer)
+    RETURN cm, c, i, cust
     """
     
     result = neo4j.execute_query(query, {'email': current_user_email})
     claims = []
     
     for record in result:
-        claimManagement = record['cm']
+        claim_management = record['cm']
         claim = record['c']
         incident = record['i']
-        
-        # Include fraud prediction information
+        customer = record.get('cust', {})
+
+        # Extract customer ID and fraud assessment
+        customer_id = customer.get('id', 'Unknown')
         fraud_info = {
-            'prediction': claimManagement.get('fraud_prediction', 'Not evaluated'),
-            'probability': claimManagement.get('fraud_probability', 0.0),
-            'reasons': claimManagement.get('fraud_reasons', 'Not evaluated')
+            'customer_id': customer_id,
+            'prediction': claim_management.get('fraud_prediction', 'Not evaluated'),
+            'probability': claim_management.get('fraud_probability', 0.0),
+            'reason': claim_management.get('fraud_reason', 'Not evaluated')
         }
         
         claims.append({
             'id': claim['id'],
+            'customer_id': customer_id,
             'type': claim['type'],
             'severity': claim['severity'],
             'total_amount': claim['total_amount'],
             'incident_date': incident['date'],
             'incident_location': incident['location'],
-            'status': claimManagement['status'],
+            'status': claim_management['status'],
             'fraud_assessment': fraud_info
         })
     

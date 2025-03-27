@@ -1,34 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp, Check, X } from "lucide-react";
-
-interface ClaimDetails {
-  claimManagementId: string;
-  claimType: string;
-  status: string;
-  lastUpdated: string;
-  fraudProbability: number;
-  fraudPrediction: number;
-  fraudReason: string;
-  claimId: string;
-  severity: string;
-  vehicleAmount: number;
-  totalAmount: number;
-  propertyAmount: number;
-  injuryAmount: number;
-  claimDetailType: string;
-  incident: {
-    date: string;
-    city: string;
-    location: string;
-  };
-  customerId: string;
-  colorCode: string;
-}
-
-interface Claim {
-  userName: string;
-  claimDetails: ClaimDetails;
-}
+import { Claim } from "../types";
 
 const AdminClaims = () => {
   const [claims, setClaims] = useState<Claim[]>([]);

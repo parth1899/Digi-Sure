@@ -8,46 +8,9 @@ import {
   Car,
   Truck as Truck2,
 } from "lucide-react";
+import type { Policy } from "../types";
 
 const AdminPolicies = () => {
-  interface Policy {
-    id: string;
-    vehicleDetails: {
-      type: string;
-      make: string;
-      model: string;
-      registrationNumber: string;
-      year: number;
-    };
-    personalInfo: {
-      fullName: string;
-      mobile: string;
-      email: string;
-      address: string;
-      city: string;
-      state: string;
-    };
-    policyDetails: {
-      idv: number;
-      ncb: number;
-      addOns: string[];
-      premium: number;
-      premiumBreakdown: {
-        basic: number;
-        addOns: number;
-        gst: number;
-        total: number;
-      };
-    };
-    status: string;
-    forgeryScore: number;
-    documents: {
-      name: string;
-      type: string;
-      forgeryScore: number;
-    }[];
-  }
-
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,10 +27,12 @@ const AdminPolicies = () => {
         throw new Error("Failed to fetch policies");
       }
       const data = await response.json();
+      console.log(data);
 
       // Transform backend data to match frontend structure
       const transformedPolicies = data.map((policy: Policy) => ({
         id: policy.id,
+        customerId: policy.fraud_assessment.customer_id, // Include customer ID
         vehicleDetails: policy.vehicleDetails,
         personalInfo: policy.personalInfo,
         policyDetails: {
@@ -85,7 +50,9 @@ const AdminPolicies = () => {
             : policy.status === "ACTIVE"
             ? "Active"
             : "Rejected",
-        forgeryScore: Math.random() * 100, // Placeholder until backend provides this
+
+        // Use actual fraud assessment data from the backend
+        forgeryScore: policy.fraud_assessment.probability * 100, // Convert probability to percentage
         documents: [], // Will be populated when expanded
       }));
 
