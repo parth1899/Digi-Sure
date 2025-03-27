@@ -165,10 +165,13 @@ const PersonalInfo: React.FC = () => {
     setTempData((prev) => (prev ? { ...prev, [field]: value } : null));
   };
 
-  if (isLoading)
+  if (isLoading) {
     return (
-      <div className="flex justify-center p-8">Loading profile data...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
     );
+  }
   if (error)
     return (
       <div className="bg-red-50 p-4 rounded-md text-red-700">

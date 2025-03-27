@@ -50,13 +50,12 @@ export interface Claim {
     riskLevel: string;
     details?: string;
   };
-  location: string;
+  incident_location: string;
   id: string;
   type: string;
   status: string;
-  amount: number;
-  date: string;
-  details: string;
+  total_amount: number;
+  incident_date: string;
 }
 
 export interface FormData {
