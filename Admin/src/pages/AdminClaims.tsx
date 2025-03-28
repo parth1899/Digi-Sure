@@ -36,14 +36,6 @@ const AdminClaims = () => {
     newStatus: string
   ) => {
     try {
-      // Optionally, send an API request to update the claim's status on the backend.
-      // await fetch(`http://localhost:8081/admin/claims/${claimManagementId}`, {
-      //   method: "PUT",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
-
-      // Update the claim status in the state.
       setClaims((prevClaims) =>
         prevClaims.map((claim) =>
           claim.claimDetails.claimManagementId === claimManagementId
@@ -63,7 +55,11 @@ const AdminClaims = () => {
   };
 
   if (loading) {
-    return <div className="p-6 text-center">Loading claims...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   if (error) {

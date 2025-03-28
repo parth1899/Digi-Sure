@@ -19,7 +19,7 @@ const AdminHome = () => {
   const [dashboardData, setDashboardData] = useState({
     total_policies: 0,
     policy_distribution: { active: 0, pending: 0 },
-    claims_distribution: { approved: 0, pending: 0, rejected: 0 },
+    claims_distribution: { approved: 0, in_progress: 0, rejected: 0 },
     total_users: 0,
     fraud_detection_rate: 0,
   });
@@ -34,6 +34,8 @@ const AdminHome = () => {
           throw new Error("Failed to fetch dashboard data");
         }
         const data = await response.json();
+        console.log(data);
+
         setDashboardData(data);
       } catch (err) {
         if (err instanceof Error) {
@@ -69,7 +71,7 @@ const AdminHome = () => {
 
   const claimData = [
     { name: "Approved", value: dashboardData.claims_distribution.approved },
-    { name: "Pending", value: dashboardData.claims_distribution.pending },
+    { name: "Pending", value: dashboardData.claims_distribution.in_progress },
     { name: "Rejected", value: dashboardData.claims_distribution.rejected },
   ];
 
@@ -105,7 +107,7 @@ const AdminHome = () => {
               <h3 className="text-2xl font-bold text-gray-900">
                 {(
                   dashboardData.claims_distribution.approved +
-                  dashboardData.claims_distribution.pending
+                  dashboardData.claims_distribution.in_progress
                 ).toLocaleString()}
               </h3>
             </div>
@@ -158,7 +160,7 @@ const AdminHome = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {policyData.map((entry, index) => (
+                  {policyData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}
@@ -189,7 +191,7 @@ const AdminHome = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {claimData.map((entry, index) => (
+                  {claimData.map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}

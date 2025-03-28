@@ -14,6 +14,7 @@ export interface Policy {
     address: string;
     city: string;
     state: string;
+    customer_id: string;
   };
   policyDetails: {
     idv: number;
@@ -34,8 +35,7 @@ export interface Policy {
     type: string;
     forgeryScore: number;
   }[];
-  fraud_assessment: {
-    customer_id: string;
+  fraudAssessment: {
     probability: number;
   };
 }

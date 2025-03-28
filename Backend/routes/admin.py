@@ -7,22 +7,20 @@ neo4j = Neo4jConnection()
 
 def calculate_forgery_score(claim):
     """
-    Calculate a forgery score based on fraud metrics provided by the ClaimManagement node.
-    Lower scores indicate lower risk.
+    Calculate a forgery score based on fraud metrics with None type handling.
     """
-    fraud_prediction = claim.get('fraudPrediction', 0)
-    fraud_probability = claim.get('fraudProbability') or 0.0
-    # Ensure fraud_reason is a string even if it's None
-    fraud_reason = claim.get('fraudReason') or ""
+    fraud_prediction = claim.get('fraudPrediction', 0) or 0
+    fraud_probability = claim.get('fraudProbability', 0.0) or 0.0
+    fraud_reason = claim.get('fraudReason', "") or ""
 
-    # Base score: scale fraud probability to percentage
+    # Base score
     score = fraud_probability * 100
 
-    # Add penalty if fraud prediction flag is raised
+    # Add penalty for fraudulent claims
     if fraud_prediction:
         score += 20
 
-    # Reduce score if the fraud reason indicates the claim appears legitimate
+    # Reduce score if claim seems legitimate
     if "legitimate" in fraud_reason.lower():
         score *= 0.8
 
@@ -31,27 +29,30 @@ def calculate_forgery_score(claim):
 
 def get_fraud_color_code(claim):
     """
-    Determines a color code for the frontend based on the claim's fraud assessment.
-    Returns red ("#FF0000") if the claim is fraudulent; otherwise, green ("#00FF00").
+    Determines a color code with None type handling.
     """
     score = calculate_forgery_score(claim)
-    # Define threshold; if fraudPrediction is active or the score is high, flag as fraud.
-    if claim.get('fraudPrediction', 0) == 1 or score >= 20:
-        return "#FF0000"  # Red for fraudulent claim
+    fraud_prediction = claim.get('fraudPrediction', 0) or 0
+    
+    # Use thresholds for color coding
+    if fraud_prediction == 1 or score >= 20:
+        return "#FF0000"  # Red for fraud
     else:
-        return "#00FF00"  # Green for non-fraudulent claim
+        return "#00FF00"  # Green for legit
+
 
 @admin_bp.route('/dashboard', methods=['GET'])
 def get_dashboard_stats():
-    # Query to get total policies count
+    """
+    Dashboard endpoint with None type handling.
+    """
     policies_query = """
     MATCH (u:User)-[:INSURANCE]->(a:Application)
     RETURN count(a) as total_policies,
            count(CASE WHEN a.status = 'PENDING' THEN 1 END) as pending_policies,
            count(CASE WHEN a.status = 'ACTIVE' THEN 1 END) as active_policies
     """
-    
-    # Query to get claims statistics
+
     claims_query = """
     MATCH (u:User)-[:HAS_CLAIMS]->(cm:ClaimManagement)
     RETURN count(cm) as total_claims,
@@ -59,51 +60,56 @@ def get_dashboard_stats():
            count(CASE WHEN cm.status = 'Approved' THEN 1 END) as approved_claims,
            count(CASE WHEN cm.status = 'Rejected' THEN 1 END) as rejected_claims
     """
-    
-    # Query to get total users
+
     users_query = """
     MATCH (u:User)
     RETURN count(u) as total_users
     """
-    
-    policy_stats = neo4j.execute_query(policies_query)[0]
-    claim_stats = neo4j.execute_query(claims_query)[0]
-    user_stats = neo4j.execute_query(users_query)[0]
-    
-    # New query to fetch fraud details for all ClaimManagement nodes
+
     fraud_query = """
     MATCH (u:User)-[:HAS_CLAIMS]->(cm:ClaimManagement)
     RETURN cm.fraudPrediction as fraudPrediction,
            cm.fraudProbability as fraudProbability,
            cm.fraudReason as fraudReason
     """
-    fraud_data = neo4j.execute_query(fraud_query)
+
+    policy_stats = neo4j.execute_query(policies_query)[0] if neo4j.execute_query(policies_query) else {}
+    claim_stats = neo4j.execute_query(claims_query)[0] if neo4j.execute_query(claims_query) else {}
+    user_stats = neo4j.execute_query(users_query)[0] if neo4j.execute_query(users_query) else {}
+
+    fraud_data = neo4j.execute_query(fraud_query) or []
     
     total_claims_fraud = len(fraud_data)
     fraudulent_count = sum(1 for claim in fraud_data if get_fraud_color_code(claim) == "#FF0000")
-    fraud_detection_rate = round((fraudulent_count / total_claims_fraud * 100) if total_claims_fraud > 0 else 0, 2)
     
+    fraud_detection_rate = round((fraudulent_count / total_claims_fraud * 100) if total_claims_fraud > 0 else 0, 2)
+
     return jsonify({
-        'total_policies': policy_stats['total_policies'],
+        'total_policies': policy_stats.get('total_policies', 0),
         'policy_distribution': {
-            'active': policy_stats['active_policies'],
-            'pending': policy_stats['pending_policies']
+            'active': policy_stats.get('active_policies', 0),
+            'pending': policy_stats.get('pending_policies', 0)
         },
         'claims_distribution': {
             'in_progress': claim_stats.get('in_progress_claims', 0),
             'approved': claim_stats.get('approved_claims', 0),
             'rejected': claim_stats.get('rejected_claims', 0)
         },
-        'total_users': user_stats['total_users'],
+        'total_users': user_stats.get('total_users', 0),
         'fraud_detection_rate': fraud_detection_rate
     })
 
+
 @admin_bp.route('/policies', methods=['GET'])
 def get_all_policies():
+    """
+    Policies endpoint with None type handling.
+    """
     query = """
     MATCH (u:User)-[:INSURANCE]->(a:Application)
     OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
     OPTIONAL MATCH (u)-[:HAS_DETAILS]->(d:OtherDetails)
+    OPTIONAL MATCH (u)-[:HAS_CLAIMS]->(cm:ClaimManagement)
     RETURN u.name as applicant_name,
            u.email as email,
            u.mobile as mobile,
@@ -130,58 +136,70 @@ def get_all_policies():
            b.panNumber as pan_number,
            d.occupation as occupation,
            d.education_level as education,
-           d.dob as date_of_birth
+           d.dob as date_of_birth,
+           cm.fraud_prediction AS fraud_prediction,
+           cm.fraud_probability AS fraud_probability,
+           cm.fraud_reason AS fraud_reason
     ORDER BY a.created_at DESC
     """
-    
-    policies = neo4j.execute_query(query)
+
+    policies = neo4j.execute_query(query) or []
     formatted_policies = []
-    
+
     for policy in policies:
         formatted_policy = {
-            'id': policy['policy_id'],
+            'id': policy.get('policy_id', 'N/A'),
             'vehicleDetails': {
-                'type': policy['vehicle_type'],
-                'registrationNumber': policy['registration_number'],
-                'make': policy['make'],
-                'model': policy['model'],
-                'year': int(policy['year'])
+                'type': policy.get('vehicle_type', 'N/A'),
+                'registrationNumber': policy.get('registration_number', 'N/A'),
+                'make': policy.get('make', 'N/A'),
+                'model': policy.get('model', 'N/A'),
+                'year': int(policy.get('year', 0))
             },
             'personalInfo': {
-                'fullName': policy['applicant_name'],
-                'mobile': policy['mobile'],
-                'email': policy['email'],
-                'address': policy['address'],
-                'city': policy['city'],
-                'state': policy['state'],
-                'customerId': policy['customer_id'],
-                'panNumber': policy.get('pan_number'),
-                'occupation': policy.get('occupation'),
-                'education': policy.get('education'),
-                'dateOfBirth': policy.get('date_of_birth')
+                'fullName': policy.get('applicant_name', 'N/A'),
+                'mobile': policy.get('mobile', 'N/A'),
+                'email': policy.get('email', 'N/A'),
+                'address': policy.get('address', 'N/A'),
+                'city': policy.get('city', 'N/A'),
+                'state': policy.get('state', 'N/A'),
+                'customerId': policy.get('customer_id', 'N/A'),
+                'panNumber': policy.get('pan_number', 'N/A'),
+                'occupation': policy.get('occupation', 'N/A'),
+                'education': policy.get('education', 'N/A'),
+                'dateOfBirth': policy.get('date_of_birth', 'N/A')
             },
             'policyDetails': {
-                'idv': float(policy['idv']),
-                'ncb': float(policy['ncb']),
-                'csl': float(policy['csl']),
-                'umbrellaLimit': float(policy['umbrella_limit']),
-                'totalInsuranceAmount': float(policy['total_amount']),
-                'addOns': eval(policy['addons']) if policy['addons'] else [],
-                'premium': float(policy['premium'])
+                'idv': float(policy.get('idv', 0.0)),
+                'ncb': float(policy.get('ncb', 0.0)),
+                'csl': float(policy.get('csl', 0.0)),
+                'umbrellaLimit': float(policy.get('umbrella_limit', 0.0)),
+                'totalInsuranceAmount': float(policy.get('total_amount', 0.0)),
+                'addOns': eval(policy.get('addons', '[]')) if policy.get('addons') else [],
+                'premium': float(policy.get('premium', 0.0))
             },
-            'status': policy['status'],
+            'status': policy.get('status', 'N/A'),
             'timestamps': {
-                'created': policy['created_at'],
-                'updated': policy['updated_at']
+                'created': policy.get('created_at', 'N/A'),
+                'updated': policy.get('updated_at', 'N/A')
+            },
+            'fraudAssessment': {
+                'prediction': policy.get('fraud_prediction', 'Not evaluated'),
+                'probability': float(0.0 if policy.get('fraud_probability') is None else policy.get('fraud_probability')) * 100,
+                'reason': policy.get('fraud_reason', 'Not available')
             }
+
         }
-        
+
         formatted_policies.append(formatted_policy)
-    
+
     return jsonify(formatted_policies)
 
 @admin_bp.route('/claims', methods=['GET'])
 def get_all_claims():
+    """
+    Fetches all claims with safe None type handling.
+    """
     query = """
     MATCH (u:User)-[:HAS_CLAIMS]->(cm:ClaimManagement)
     OPTIONAL MATCH (cm)-[:MANAGES]->(c:Claim)
@@ -207,48 +225,49 @@ def get_all_claims():
            i.city as incident_city,
            i.location as incident_location
     """
-    
-    claims = neo4j.execute_query(query)
+
+    claims = neo4j.execute_query(query) or []
     formatted_claims = []
-    
+
     for claim in claims:
         color_code = get_fraud_color_code(claim)
-        
+
         claim_details = {
-            'claimManagementId': claim.get('claim_management_id'),
-            'claimType': claim.get('claim_type'),
-            'status': claim.get('status'),
-            'lastUpdated': claim.get('submission_date'),
-            'fraudProbability': claim.get('fraudProbability'),
-            'fraudPrediction': claim.get('fraudPrediction'),
-            'fraudReason': claim.get('fraudReason'),
-            'claimId': claim.get('claim_id'),
-            'severity': claim.get('severity'),
-            'vehicleAmount': claim.get('vehicle_amount'),
-            'totalAmount': claim.get('total_amount'),
-            'propertyAmount': claim.get('property_amount'),
-            'injuryAmount': claim.get('injury_amount'),
-            'claimDetailType': claim.get('claim_detail_type'),
+            'claimManagementId': claim.get('claim_management_id', 'N/A'),
+            'claimType': claim.get('claim_type', 'N/A'),
+            'status': claim.get('status', 'Unknown'),
+            'lastUpdated': claim.get('submission_date', 'N/A'),
+            'probability': float(0.0 if claim.get('fraud_probability') is None else claim.get('fraud_probability')) * 100,
+            'fraudPrediction': claim.get('fraudPrediction', 0),
+            'fraudReason': claim.get('fraudReason', 'Not specified'),
+            'claimId': claim.get('claim_id', 'N/A'),
+            'severity': claim.get('severity', 'Unknown'),
+            'vehicleAmount': float(claim.get('vehicle_amount', 0.0)),
+            'totalAmount': float(claim.get('total_amount', 0.0)),
+            'propertyAmount': float(claim.get('property_amount', 0.0)),
+            'injuryAmount': float(claim.get('injury_amount', 0.0)),
+            'claimDetailType': claim.get('claim_detail_type', 'N/A'),
             'incident': {
-                'date': claim.get('incident_date'),
-                'city': claim.get('incident_city'),
-                'location': claim.get('incident_location')
+                'date': claim.get('incident_date', 'N/A'),
+                'city': claim.get('incident_city', 'Unknown'),
+                'location': claim.get('incident_location', 'Unknown')
             },
-            'customerId': claim.get('customer_id'),
+            'customerId': claim.get('customer_id', 'N/A'),
             'colorCode': color_code
         }
-        
+
         formatted_claims.append({
-            'userName': claim.get('user_name'),
+            'userName': claim.get('user_name', 'Unknown'),
             'claimDetails': claim_details
         })
-    
+
     return jsonify(formatted_claims)
+
 
 def get_policy_documents(policy_id):
     """
     Fetches file documents associated with a given policy from the Neo4j database.
-    Returns a list of documents with confidence, predicted label, file path, file name, and upload date.
+    Includes safe handling of None values.
     """
     query = """
     MATCH (a:Application {application_id: $policy_id})-[:HAS_DOCUMENT]->(f:File)
@@ -258,17 +277,21 @@ def get_policy_documents(policy_id):
            f.file_name AS file_name,
            f.upload_date AS upload_date
     """
-    documents = neo4j.execute_query(query, parameters={"policy_id": policy_id})
+
+    documents = neo4j.execute_query(query, parameters={"policy_id": policy_id}) or []
     formatted_docs = []
+
     for doc in documents:
         formatted_docs.append({
-            "confidence": doc.get("confidence"),
-            "label": doc.get("predicted_label"),
-            "filePath": doc.get("file_path"),
-            "fileName": doc.get("file_name"),
-            "uploadDate": doc.get("upload_date")
+            "confidence": float(doc.get("confidence", 0.0)),
+            "label": doc.get("predicted_label", "Unknown"),
+            "filePath": doc.get("file_path", "N/A"),
+            "fileName": doc.get("file_name", "Unknown"),
+            "uploadDate": doc.get("upload_date", "N/A")
         })
+
     return formatted_docs
+
 
 @admin_bp.route('/documents/<policy_id>', methods=['GET'])
 def get_documents(policy_id):

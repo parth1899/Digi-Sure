@@ -29,10 +29,9 @@ const AdminPolicies = () => {
       const data = await response.json();
       console.log(data);
 
-      // Transform backend data to match frontend structure
       const transformedPolicies = data.map((policy: Policy) => ({
         id: policy.id,
-        customerId: policy.fraud_assessment.customer_id, // Include customer ID
+        customerId: policy.personalInfo.customer_id, // Include customer ID
         vehicleDetails: policy.vehicleDetails,
         personalInfo: policy.personalInfo,
         policyDetails: {
@@ -52,7 +51,7 @@ const AdminPolicies = () => {
             : "Rejected",
 
         // Use actual fraud assessment data from the backend
-        forgeryScore: policy.fraud_assessment.probability * 100, // Convert probability to percentage
+        forgeryScore: policy.fraudAssessment.probability * 100, // Convert probability to percentage
         documents: [], // Will be populated when expanded
       }));
 
@@ -107,14 +106,6 @@ const AdminPolicies = () => {
 
   const updatePolicyStatus = async (policyId: string, newStatus: string) => {
     try {
-      // Optionally, send an API request to update the policy's status on the backend.
-      // await fetch(`http://localhost:8081/admin/policies/${policyId}`, {
-      //   method: "PUT",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ status: newStatus }),
-      // });
-
-      // Update the policy status in the state.
       setPolicies((prevPolicies) =>
         prevPolicies.map((policy) =>
           policy.id === policyId ? { ...policy, status: newStatus } : policy
@@ -134,7 +125,11 @@ const AdminPolicies = () => {
   };
 
   if (loading) {
-    return <div className="p-6">Loading policies...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   if (error) {
