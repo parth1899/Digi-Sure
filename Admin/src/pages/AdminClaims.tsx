@@ -18,8 +18,20 @@ const AdminClaims = () => {
       if (!response.ok) {
         throw new Error("Failed to fetch claims");
       }
-      const data = await response.json();
-      setClaims(data);
+      const data = (await response.json()) as Claim[];
+      console.log(data);
+
+      // Deduplicate claims based on claimManagementId
+      const dedupedClaims = Array.from(
+        new Map(
+          data.map((claim: Claim) => [
+            claim.claimDetails.claimManagementId,
+            claim,
+          ])
+        ).values()
+      );
+
+      setClaims(dedupedClaims);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {

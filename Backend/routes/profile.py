@@ -66,7 +66,6 @@ def get_profile(current_user_email):
             banking_data = dict_from_node(record['b'])
             insurances = [dict_from_node(insurance) for insurance in record['insurances']]
             other_details = dict_from_node(record['d']) if record.get('d') else {}
-            print(other_details)
 
             # Mask sensitive data
             if banking_data:
@@ -86,7 +85,12 @@ def get_profile(current_user_email):
                 'profilePicture': user_data.get('profilePicture', ''),
                 **banking_data,
                 'insurancePolicies': insurances,
-                'otherDetails': other_details
+                'sex': other_details.get('sex'),
+                'dob': other_details.get('dob'),
+                'occupation': other_details.get('occupation'),
+                'education': other_details.get('education'),
+                'hobbies': other_details.get('hobbies'),
+                'relationship': other_details.get('relationship')
             }
 
             return jsonify(response)

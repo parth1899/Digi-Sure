@@ -99,9 +99,7 @@ def detect_forgery(current_user_email):  # Now receives email instead of user ob
 @token_required
 def get_images(current_user_email):  # Now receives email instead of user object
     try:
-        print("hiii")
         neo4j = Neo4jConnection()
-        print("HII")
         token = request.headers.get('Authorization').split(' ')[1]
         current_user_email = get_user_from_token(token)
         # Modified query to match user by email

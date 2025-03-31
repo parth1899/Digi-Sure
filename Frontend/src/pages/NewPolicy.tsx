@@ -108,7 +108,7 @@ function Apply() {
   };
 
   const handleNext = async () => {
-    if (step === 4) {
+    if (step === 5) {
       // Submit form data before proceeding to payment
       const submitted = await submitFormData();
       if (!submitted) {

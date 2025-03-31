@@ -7,9 +7,6 @@ class Neo4jConnection:
             Config.NEO4J_URI,
             auth=(Config.NEO4J_USER, Config.NEO4J_PASSWORD)
         )
-        with self.driver.session() as session:
-            result = session.run("RETURN 'Connected!' AS message")
-            print(result.single()["message"])
 
     def close(self):
         self.driver.close()

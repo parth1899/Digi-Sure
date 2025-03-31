@@ -29,7 +29,7 @@ const AdminPolicies = () => {
       const data = await response.json();
       console.log(data);
 
-      const transformedPolicies = data.map((policy: Policy) => ({
+      const transformedPolicies = (data as Policy[]).map((policy) => ({
         id: policy.id,
         customerId: policy.personalInfo.customer_id, // Include customer ID
         vehicleDetails: policy.vehicleDetails,
@@ -49,13 +49,17 @@ const AdminPolicies = () => {
             : policy.status === "ACTIVE"
             ? "Active"
             : "Rejected",
-
-        // Use actual fraud assessment data from the backend
         forgeryScore: policy.fraudAssessment.probability * 100, // Convert probability to percentage
+        fraudAssessment: policy.fraudAssessment, // Include fraudAssessment
         documents: [], // Will be populated when expanded
       }));
 
-      setPolicies(transformedPolicies);
+      // Deduplicate policies based on policy id
+      const uniquePolicies = Array.from(
+        new Map(transformedPolicies.map((p: Policy) => [p.id, p])).values()
+      );
+
+      setPolicies(uniquePolicies);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

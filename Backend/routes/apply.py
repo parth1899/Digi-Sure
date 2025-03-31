@@ -12,7 +12,6 @@ def apply():
 
     try:
         data = request.get_json()
-        print(data)
         if not data:
             return jsonify({'error': 'No data provided'}), 400
 

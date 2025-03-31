@@ -23,14 +23,14 @@ PREDICTION_COLUMNS = [
 MODEL_SAVE_PATH = "xgb_fraud_model_gridcv.pkl"
 
 # --- Neo4j Data Fetching ---
-def fetch_data_from_neo4j(driver, query):
+def fetch_data_from_neo4j(driver, query, params=None):
     """
-    Execute the provided Neo4j query and merge the properties of all returned nodes
-    into a single dictionary per record.
+    Execute the provided Neo4j query with optional parameters and merge the properties 
+    of all returned nodes into a single dictionary per record.
     """
     data = []
     with driver.session() as session:
-        results = session.run(query)
+        results = session.run(query, params or {})
         records = results.data()
         for record in records:
             datapoint = {}
