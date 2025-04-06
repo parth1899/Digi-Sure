@@ -1,9 +1,10 @@
-import React from "react";
-import { CheckCircle, Download, MessageCircle, Check } from "lucide-react";
+import React, { useEffect } from "react";
+import { CheckCircle, Download, MessageCircle, Check, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Success: React.FC = () => {
   const navigate = useNavigate();
+
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-8 text-center">
       <div className="mb-6">
@@ -38,15 +39,19 @@ const Success: React.FC = () => {
           <p>Valid Till: March 14, 2026</p>
         </div>
       </div>
-      <button
-        onClick={() => {
-          navigate("/dashboard");
-        }}
-        className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-      >
-        <Check size={20} />
-        <span>Done Continue</span>
-      </button>
+
+      <div className="mt-8">
+        <p className="text-gray-600 mb-4">
+          To complete the process and for admin verification, please upload your required documents.
+        </p>
+        <button
+          onClick={() => navigate("/dashboard/documents")}
+          className="w-full flex items-center justify-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+        >
+          <FileText size={20} />
+          <span>Upload Documents</span>
+        </button>
+      </div>
     </div>
   );
 };

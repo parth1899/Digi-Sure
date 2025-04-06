@@ -1,5 +1,6 @@
 import React from "react";
 import { Bell, User as UserIcon, LogOut, Building2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { User } from "../../types";
 
 interface HeaderProps {
@@ -7,6 +8,14 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user }) => {
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Add any logout logic if needed, then navigate to home ("/")
+    navigate("/");
+  };
+
   return (
     <header className="bg-white border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,7 +36,10 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
                 {user.name}
               </span>
             </div>
-            <LogOut className="w-6 h-6 text-gray-600 cursor-pointer" />
+            <LogOut 
+              className="w-6 h-6 text-gray-600 cursor-pointer"
+              onClick={handleLogout} 
+            />
           </div>
         </div>
       </div>
