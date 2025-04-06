@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_from_directory, current_app
 from database.connection import Neo4jConnection
 from datetime import datetime
+from config import Config
 
 admin_bp = Blueprint('admin', __name__)
 neo4j = Neo4jConnection()
@@ -263,6 +264,14 @@ def get_all_claims():
 
     return jsonify(formatted_claims)
 
+@admin_bp.route('/documents/<policy_id>', methods=['GET'])
+def get_documents(policy_id):
+    """
+    Endpoint to fetch and return file documents for a given policy.
+    """
+    print(policy_id)
+    documents = get_policy_documents(policy_id)
+    return jsonify(documents)
 
 def get_policy_documents(policy_id):
     """
@@ -270,33 +279,36 @@ def get_policy_documents(policy_id):
     Includes safe handling of None values.
     """
     query = """
-    MATCH (a:Application {application_id: $policy_id})-[:HAS_DOCUMENT]->(f:File)
-    RETURN f.confidence AS confidence,
-           f.predicted_label AS predicted_label,
-           f.file_path AS file_path,
-           f.file_name AS file_name,
-           f.upload_date AS upload_date
+    MATCH (a:Application {application_id: $policy_id})<-[:INSURANCE]-(u:User)-[:HAS_DOC]->(d:Document)
+    RETURN d.confidence AS confidence,
+           d.predicted_label AS predicted_label,
+           d.file_path AS file_path,
+           d.file_name AS file_name,
+           d.upload_date AS upload_date
     """
 
     documents = neo4j.execute_query(query, parameters={"policy_id": policy_id}) or []
+    print(documents)
     formatted_docs = []
 
     for doc in documents:
+        # Convert upload_date to string if it's not already
+        upload_date = doc.get("upload_date", "N/A")
+        if upload_date != "N/A":
+            upload_date = str(upload_date)
+
         formatted_docs.append({
             "confidence": float(doc.get("confidence", 0.0)),
             "label": doc.get("predicted_label", "Unknown"),
             "filePath": doc.get("file_path", "N/A"),
             "fileName": doc.get("file_name", "Unknown"),
-            "uploadDate": doc.get("upload_date", "N/A")
+            "uploadDate": upload_date
         })
 
     return formatted_docs
 
-
-@admin_bp.route('/documents/<policy_id>', methods=['GET'])
-def get_documents(policy_id):
-    """
-    Endpoint to fetch and return file documents for a given policy.
-    """
-    documents = get_policy_documents(policy_id)
-    return jsonify(documents)
+@admin_bp.route('/documents/uploads/<path:filename>')
+def serve_uploads(filename):
+    # Ensure your app’s configuration points to the correct uploads folder
+    uploads_folder = Config.UPLOAD_FOLDER
+    return send_from_directory(uploads_folder, filename)
