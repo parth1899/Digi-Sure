@@ -73,27 +73,34 @@ const AdminPolicies = () => {
 
   const fetchDocuments = async (policyId: string) => {
     try {
-      const response = await fetch(`/admin/documents/${policyId}`);
+      console.log("The policy id is " + policyId);
+      const response = await fetch(`http://localhost:8081/admin/documents/${policyId}`);
       if (!response.ok) {
         throw new Error("Failed to fetch documents");
       }
       const documents = await response.json();
-
-      // Transform documents to match frontend structure
-      return documents.map(
-        (doc: { fileName: string; label: string; confidence: number }) => ({
-          name: doc.fileName,
-          type: doc.label,
-          forgeryScore: (1 - doc.confidence) * 100,
-        })
-      );
+      console.log("The documents are: ", documents);
+  
+      // Transform documents: keep all fields and add imageUrl
+      return documents.map((doc: { fileName: string; filePath: string; label: string; confidence: number }) => {
+        // Replace backslashes with forward slashes
+        const cleanPath = doc.filePath.replace(/\\/g, "/");
+        const imageUrl = `http://localhost:8081/admin/documents/${cleanPath}`;
+        return {
+          ...doc,
+          imageUrl, // New field with the full URL for the image
+          forgeryScore: (1 - doc.confidence) * 100, // Keep your existing calculation
+        };
+      });
     } catch (err) {
       console.error("Error fetching documents:", err);
       return [];
     }
   };
+  
 
   const toggleExpand = async (policyId: string) => {
+    console.log("The policy id is first  " + policyId);
     if (expandedPolicy === policyId) {
       setExpandedPolicy(null);
     } else {
@@ -438,39 +445,24 @@ const AdminPolicies = () => {
                               Document Verification
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {policy.documents.map((doc, index) => (
-                                <div
-                                  key={index}
-                                  className="bg-gray-50 p-4 rounded-lg border border-gray-200"
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <p className="text-gray-900 font-medium">
-                                        {doc.name}
-                                      </p>
-                                      <p className="text-gray-500 text-sm">
-                                        {doc.type}
-                                      </p>
-                                    </div>
-                                    <div
-                                      className={`text-sm ${
-                                        doc.forgeryScore > 50
-                                          ? "text-red-600"
-                                          : "text-green-600"
-                                      }`}
-                                    >
-                                      {Math.round(doc.forgeryScore)}% forgery
-                                      score
-                                      {doc.forgeryScore > 50 && (
-                                        <AlertTriangle
-                                          size={16}
-                                          className="ml-2 inline"
-                                        />
-                                      )}
-                                    </div>
+                            {policy.documents.map((doc, index) => (
+                              <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="text-gray-900 font-medium">{doc.fileName}</p>
+                                    <p className="text-gray-500 text-sm">{doc.label}</p>
+                                  </div>
+                                  <div className={`text-sm ${doc.forgeryScore > 50 ? "text-red-600" : "text-green-600"}`}>
+                                    {Math.round(doc.forgeryScore)}% forgery score
+                                    {doc.forgeryScore > 50 && (
+                                      <AlertTriangle size={16} className="ml-2 inline" />
+                                    )}
                                   </div>
                                 </div>
-                              ))}
+                                {/* Render the image */}
+                                <img src={doc.imageUrl} alt={doc.fileName} className="mt-2 max-w-full h-auto" />
+                              </div>
+                            ))}
                               {policy.documents.length === 0 && (
                                 <div className="lg:col-span-2 text-center py-8 text-gray-500">
                                   Loading documents...
