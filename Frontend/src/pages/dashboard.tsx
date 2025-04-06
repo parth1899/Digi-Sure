@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import Header from "../components/Layout/Header";
 import Sidebar from "../components/Layout/Sidebar";
 import PersonalInfo from "../components/Pages/Info";
@@ -13,55 +13,15 @@ import Security from "../components/Pages/Security";
 import Reward from "../components/Pages/Rewards";
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState("personal");
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const user: User = {
-    name: "",
-    customerId: "SBI87654321",
-    email: "rajesh.kumar@email.com",
-    mobile: "+91 98765 43210",
-    address: "123, Park Street, Mumbai",
-    otherDetails: {
-      sex: undefined,
-      dob: undefined,
-      education_level: "",
-      occupation: "",
-      hobbies: "",
-      relationship: "",
-    },
-  };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "personal":
-        return <PersonalInfo />;
-      case "policies":
-        return <Policies />;
-      case "claims":
-        return <Claims />;
-      case "payments":
-        return <Payments />;
-      case "support":
-        return <SupportTickets />;
-      case "nominees":
-        return <Nominees />;
-      case "documents":
-        return <Documents />;
-      case "security":
-        return <Security />;
-      case "reward":
-        return <Reward />;
-      default:
-        return (
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <p className="text-gray-600">Select a tab to view details</p>
-          </div>
-        );
-    }
-  };
+  // Extract the current tab from the URL. Defaults to "personal" if no tab is provided.
+  const pathSegments = location.pathname.split("/");
+  const currentTab = pathSegments[2] || "personal";
 
   const getTabTitle = () => {
-    switch (activeTab) {
+    switch (currentTab) {
       case "personal":
         return {
           title: "My Profile",
@@ -115,12 +75,31 @@ const Dashboard = () => {
     }
   };
 
+  const user: User = {
+    name: "",
+    customerId: "SBI87654321",
+    email: "rajesh.kumar@email.com",
+    mobile: "+91 98765 43210",
+    address: "123, Park Street, Mumbai",
+    otherDetails: {
+      sex: undefined,
+      dob: undefined,
+      education_level: "",
+      occupation: "",
+      hobbies: "",
+      relationship: "",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header user={user} />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row gap-8">
-          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+          <Sidebar
+            activeTab={currentTab}
+            setActiveTab={(tab) => navigate(`/dashboard/${tab}`)}
+          />
           <div className="flex-1">
             <div className="mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
@@ -128,7 +107,27 @@ const Dashboard = () => {
               </h1>
               <p className="text-sm text-gray-600">{getTabTitle().subtitle}</p>
             </div>
-            {renderContent()}
+            <Routes>
+              {/* When the user lands on /dashboard, redirect to /dashboard/personal */}
+              <Route index element={<Navigate to="personal" replace />} />
+              <Route path="personal" element={<PersonalInfo />} />
+              <Route path="policies" element={<Policies />} />
+              <Route path="claims" element={<Claims />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="support" element={<SupportTickets />} />
+              <Route path="nominees" element={<Nominees />} />
+              <Route path="documents" element={<Documents />} />
+              <Route path="security" element={<Security />} />
+              <Route path="rewards" element={<Reward />} />
+              <Route
+                path="*"
+                element={
+                  <div className="bg-white p-6 rounded-lg shadow-sm">
+                    <p className="text-gray-600">Select a tab to view details</p>
+                  </div>
+                }
+              />
+            </Routes>
           </div>
         </div>
       </main>
