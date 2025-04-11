@@ -96,3 +96,90 @@ def get_user_policies(current_user_email):
             "status": "error",
             "message": str(e)
         }), 500
+
+
+@dashboard_bp.route('/user', methods=['GET'])
+@token_required
+def get_current_user_details(current_user_email):
+    def get_user(tx, email):
+        query = """
+            MATCH (u:User {email: $email})
+            RETURN u { .name, .customerId, .email, .mobile, .address, .education_level, .occupation, .hobbies, .relationship } AS user
+        """
+        result = tx.run(query, email=email)
+        record = result.single()
+        if record:
+            return record["user"]
+        return None
+
+    try:
+        db = Neo4jConnection()
+        with db.get_session() as session:
+            user_data = session.execute_read(get_user, current_user_email)
+            if user_data:
+                return jsonify({"success": True, "user": user_data}), 200
+            else:
+                return jsonify({"success": False, "message": "User not found"}), 404
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    
+@dashboard_bp.route('/user/is-complete', methods=['GET'])
+@token_required
+def check_user_profile_completeness(current_user_email):
+    def get_user_profile(tx, email):
+        query = """
+            MATCH (u:User {email: $email})
+            OPTIONAL MATCH (u)-[:HAS_DETAILS]->(od:OtherDetails)
+            OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(bd:BankingDetails)
+            OPTIONAL MATCH (u)-[:INSURANCE]->(a:Application)
+            RETURN {
+                dob: od.dob,
+                education_level: od.education_level,
+                hobbies: od.hobbies,
+                occupation: od.occupation,
+                relationship: od.relationship,
+                sex: od.sex,
+                aadharNumber: bd.aadharNumber,
+                accountNumber: bd.accountNumber,
+                ifscCode: bd.ifscCode,
+                panNumber: bd.panNumber,
+                address: u.address,
+                applications: a.application_id
+            } AS profile
+        """
+        result = tx.run(query, email=email)
+        record = result.single()
+        if record:
+            return record["profile"]
+        return None
+
+    try:
+        db = Neo4jConnection()
+        with db.get_session() as session:
+            profile = session.execute_read(get_user_profile, current_user_email)
+
+            if not profile:
+                return jsonify({"success": False, "message": "User not found"}), 404
+
+            required_fields = [
+                "dob", "education_level", "hobbies", "occupation",
+                "relationship", "sex", "aadharNumber", "accountNumber",
+                "ifscCode", "panNumber", "address"
+            ]
+
+            missing_fields = [field for field in required_fields 
+                            if profile.get(field) in [None, "", []]]
+
+            is_complete = len(missing_fields) == 0
+            has_applications = bool(profile.get("applications") and any(profile["applications"]))
+
+            return jsonify({
+                "success": True,
+                "isComplete": is_complete,
+                "missingFields": missing_fields,
+                "hasApplications": has_applications
+            }), 200
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500

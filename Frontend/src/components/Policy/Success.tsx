@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { CheckCircle, Download, MessageCircle, Check, FileText } from "lucide-react";
+import React from "react";
+import { CheckCircle, Download, MessageCircle, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const Success: React.FC = () => {
@@ -42,7 +42,8 @@ const Success: React.FC = () => {
 
       <div className="mt-8">
         <p className="text-gray-600 mb-4">
-          To complete the process and for admin verification, please upload your required documents.
+          To complete the process and for admin verification, please upload your
+          required documents.
         </p>
         <button
           onClick={() => navigate("/dashboard/documents")}

@@ -88,11 +88,11 @@ def get_profile(current_user_email):
                 'sex': other_details.get('sex'),
                 'dob': other_details.get('dob'),
                 'occupation': other_details.get('occupation'),
-                'education': other_details.get('education'),
+                'education_level': other_details.get('education_level'),
                 'hobbies': other_details.get('hobbies'),
                 'relationship': other_details.get('relationship')
             }
-
+            print(response)
             return jsonify(response)
 
     except Exception as e:
@@ -171,12 +171,21 @@ def update_banking_details(current_user_email):
         print(f"Error in update_banking_details: {str(e)}")
         return jsonify({'message': f'Error updating banking details: {str(e)}'}), 500
 
+# Add this helper function at the top with other helper functions
+def serialize_neo4j_data(data):
+    """Convert Neo4j data types to JSON serializable formats"""
+    from neo4j.time import DateTime
+    if isinstance(data, DateTime):
+        return data.isoformat()
+    return data
+
 @profile_bp.route('/profile/address', methods=['PUT'])
 @token_required
 def update_address(current_user_email):
     """Update address information"""
     try:
         data = request.json
+        print(data)
         with neo4j.get_session() as session:
             result = session.run("""
                 MATCH (u:User {email: $email})
@@ -184,10 +193,13 @@ def update_address(current_user_email):
                 RETURN u
             """, email=current_user_email, address=data.get('address'))
             
-            updated_user = dict_from_node(result.single()['u'])
+            # Convert Neo4j node to dictionary and serialize DateTime fields
+            user_data = dict_from_node(result.single()['u'])
+            serialized_user = {k: serialize_neo4j_data(v) for k, v in user_data.items()}
+            
             return jsonify({
                 'message': 'Address updated successfully',
-                'data': updated_user
+                'data': serialized_user
             })
 
     except Exception as e:
