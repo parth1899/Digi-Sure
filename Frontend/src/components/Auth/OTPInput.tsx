@@ -23,19 +23,16 @@ const OTPInput: React.FC<OTPInputProps> = ({ length, onComplete }) => {
     if (isNaN(Number(value))) return;
 
     const newOtp = [...otp];
-    // Allow only last entered digit
     newOtp[index] = value.substring(value.length - 1);
     setOtp(newOtp);
 
-    // Check if all digits are filled
+    if (value && index < length - 1 && inputRefs.current[index + 1]) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
     const combinedOtp = newOtp.join("");
     if (combinedOtp.length === length) {
       onComplete(combinedOtp);
-    }
-
-    // Move to next input if available
-    if (value && index < length - 1 && inputRefs.current[index + 1]) {
-      inputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -44,7 +41,6 @@ const OTPInput: React.FC<OTPInputProps> = ({ length, onComplete }) => {
     index: number
   ) => {
     if (e.key === "Backspace") {
-      // Move to previous input if current is empty
       if (!otp[index] && index > 0 && inputRefs.current[index - 1]) {
         inputRefs.current[index - 1]?.focus();
       }
@@ -62,12 +58,10 @@ const OTPInput: React.FC<OTPInputProps> = ({ length, onComplete }) => {
     }
     setOtp(newOtp);
 
-    // Move focus to the next empty input or the last input
     const nextEmptyIndex = newOtp.findIndex((digit) => !digit);
     const focusIndex = nextEmptyIndex === -1 ? length - 1 : nextEmptyIndex;
     inputRefs.current[focusIndex]?.focus();
 
-    // Check if all digits are filled
     const combinedOtp = newOtp.join("");
     if (combinedOtp.length === length) {
       onComplete(combinedOtp);
