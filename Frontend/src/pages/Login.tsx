@@ -90,7 +90,9 @@ function App() {
         );
 
         if (isLogin) {
-          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+          const array = new Uint32Array(1);
+          window.crypto.getRandomValues(array);
+          const otp = (array[0] % 1000000).toString().padStart(6, '0');
           const expiryTime = new Date(
             Date.now() + 15 * 60000
           ).toLocaleTimeString();
