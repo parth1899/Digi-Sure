@@ -2,9 +2,16 @@ from flask import Blueprint, jsonify, request, send_from_directory, current_app
 from database.connection import Neo4jConnection
 from datetime import datetime
 from config import Config
+from neo4j.time import Date, DateTime
 
 admin_bp = Blueprint('admin', __name__)
 neo4j = Neo4jConnection()
+
+def serialize_neo4j_value(value):
+    """Helper function to serialize Neo4j values to JSON-compatible format"""
+    if isinstance(value, (Date, DateTime)):
+        return value.isoformat()
+    return value
 
 def calculate_forgery_score(claim):
     """
@@ -104,13 +111,13 @@ def get_dashboard_stats():
 @admin_bp.route('/policies', methods=['GET'])
 def get_all_policies():
     """
-    Policies endpoint with None type handling.
+    Policies endpoint with None type handling and proper serialization
     """
     query = """
     MATCH (u:User)-[:INSURANCE]->(a:Application)
     OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
-    OPTIONAL MATCH (u)-[:HAS_DETAILS]->(d:OtherDetails)
-    OPTIONAL MATCH (u)-[:HAS_CLAIMS]->(cm:ClaimManagement)
+    OPTIONAL MATCH (u)-[:HAS_DETAILS]->(o:OtherDetails)
+    OPTIONAL MATCH (u)-[:HAS_DOC]->(d:Document)
     RETURN u.name as applicant_name,
            u.email as email,
            u.mobile as mobile,
@@ -135,63 +142,72 @@ def get_all_policies():
            a.created_at as created_at,
            a.updated_at as updated_at,
            b.panNumber as pan_number,
-           d.occupation as occupation,
-           d.education_level as education,
-           d.dob as date_of_birth,
-           cm.fraud_prediction AS fraud_prediction,
-           cm.fraud_probability AS fraud_probability,
-           cm.fraud_reason AS fraud_reason
+           o.occupation as occupation,
+           o.education_level as education,
+           o.dob as date_of_birth,
+           d.predicted_label as predicted_label,
+           d.confidence as confidence
     ORDER BY a.created_at DESC
     """
 
     policies = neo4j.execute_query(query) or []
     formatted_policies = []
 
+    def parse_addons(addons_value):
+        """Safely parse addons from Neo4j value"""
+        if isinstance(addons_value, str):
+            try:
+                import json
+                return json.loads(addons_value)
+            except json.JSONDecodeError:
+                return []
+        elif isinstance(addons_value, (list, tuple)):
+            return list(addons_value)
+        return []
+
     for policy in policies:
+        # Serialize all values to handle Neo4j specific types
+        serialized_policy = {k: serialize_neo4j_value(v) for k, v in policy.items()}
+        
         formatted_policy = {
-            'id': policy.get('policy_id', 'N/A'),
+            'id': serialized_policy.get('policy_id', 'N/A'),
             'vehicleDetails': {
-                'type': policy.get('vehicle_type', 'N/A'),
-                'registrationNumber': policy.get('registration_number', 'N/A'),
-                'make': policy.get('make', 'N/A'),
-                'model': policy.get('model', 'N/A'),
-                'year': int(policy.get('year', 0))
+                'type': serialized_policy.get('vehicle_type', 'N/A'),
+                'registrationNumber': serialized_policy.get('registration_number', 'N/A'),
+                'make': serialized_policy.get('make', 'N/A'),
+                'model': serialized_policy.get('model', 'N/A'),
+                'year': int(serialized_policy.get('year', 0))
             },
             'personalInfo': {
-                'fullName': policy.get('applicant_name', 'N/A'),
-                'mobile': policy.get('mobile', 'N/A'),
-                'email': policy.get('email', 'N/A'),
-                'address': policy.get('address', 'N/A'),
-                'city': policy.get('city', 'N/A'),
-                'state': policy.get('state', 'N/A'),
-                'customerId': policy.get('customer_id', 'N/A'),
-                'panNumber': policy.get('pan_number', 'N/A'),
-                'occupation': policy.get('occupation', 'N/A'),
-                'education': policy.get('education', 'N/A'),
-                'dateOfBirth': policy.get('date_of_birth', 'N/A')
+                'fullName': serialized_policy.get('applicant_name', 'N/A'),
+                'mobile': serialized_policy.get('mobile', 'N/A'),
+                'email': serialized_policy.get('email', 'N/A'),
+                'address': serialized_policy.get('address', 'N/A'),
+                'city': serialized_policy.get('city', 'N/A'),
+                'state': serialized_policy.get('state', 'N/A'),
+                'customerId': serialized_policy.get('customer_id', 'N/A'),
+                'panNumber': serialized_policy.get('pan_number', 'N/A'),
+                'occupation': serialized_policy.get('occupation', 'N/A'),
+                'education': serialized_policy.get('education', 'N/A'),
+                'dateOfBirth': serialized_policy.get('date_of_birth', 'N/A')
             },
             'policyDetails': {
-                'idv': float(policy.get('idv', 0.0)),
-                'ncb': float(policy.get('ncb', 0.0)),
-                'csl': float(policy.get('csl', 0.0)),
-                'umbrellaLimit': float(policy.get('umbrella_limit', 0.0)),
-                'totalInsuranceAmount': float(policy.get('total_amount', 0.0)),
-                'addOns': eval(policy.get('addons', '[]')) if policy.get('addons') else [],
-                'premium': float(policy.get('premium', 0.0))
+                'idv': float(serialized_policy.get('idv', 0.0)),
+                'ncb': float(serialized_policy.get('ncb', 0.0)),
+                'csl': float(serialized_policy.get('csl', 0.0)),
+                'umbrellaLimit': float(serialized_policy.get('umbrella_limit', 0.0)),
+                'totalInsuranceAmount': float(serialized_policy.get('total_amount', 0.0)),
+                'addOns': parse_addons(serialized_policy.get('addons')),
+                'premium': float(serialized_policy.get('premium', 0.0))
             },
-            'status': policy.get('status', 'N/A'),
+            'status': serialized_policy.get('status', 'N/A'),
             'timestamps': {
-                'created': policy.get('created_at', 'N/A'),
-                'updated': policy.get('updated_at', 'N/A')
+                'created': serialized_policy.get('created_at', 'N/A'),
+                'updated': serialized_policy.get('updated_at', 'N/A')
             },
-            'fraudAssessment': {
-                'prediction': policy.get('fraud_prediction', 'Not evaluated'),
-                'probability': float(0.0 if policy.get('fraud_probability') is None else policy.get('fraud_probability')) * 100,
-                'reason': policy.get('fraud_reason', 'Not available')
-            }
-
+            'predicted_label': serialized_policy.get('predicted_label', 'N/A'),
+            'confidence': float(serialized_policy.get('confidence') or 0.0)
         }
-
         formatted_policies.append(formatted_policy)
 
     return jsonify(formatted_policies)
@@ -231,34 +247,36 @@ def get_all_claims():
     formatted_claims = []
 
     for claim in claims:
-        color_code = get_fraud_color_code(claim)
+        # Serialize all values to handle Neo4j specific types
+        serialized_claim = {k: serialize_neo4j_value(v) for k, v in claim.items()}
+        color_code = get_fraud_color_code(serialized_claim)
 
         claim_details = {
-            'claimManagementId': claim.get('claim_management_id', 'N/A'),
-            'claimType': claim.get('claim_type', 'N/A'),
-            'status': claim.get('status', 'Unknown'),
-            'lastUpdated': claim.get('submission_date', 'N/A'),
-            'probability': float(0.0 if claim.get('fraud_probability') is None else claim.get('fraud_probability')) * 100,
-            'fraudPrediction': claim.get('fraudPrediction', 0),
-            'fraudReason': claim.get('fraudReason', 'Not specified'),
-            'claimId': claim.get('claim_id', 'N/A'),
-            'severity': claim.get('severity', 'Unknown'),
-            'vehicleAmount': float(claim.get('vehicle_amount', 0.0)),
-            'totalAmount': float(claim.get('total_amount', 0.0)),
-            'propertyAmount': float(claim.get('property_amount', 0.0)),
-            'injuryAmount': float(claim.get('injury_amount', 0.0)),
-            'claimDetailType': claim.get('claim_detail_type', 'N/A'),
+            'claimManagementId': serialized_claim.get('claim_management_id', 'N/A'),
+            'claimType': serialized_claim.get('claim_type', 'N/A'),
+            'status': serialized_claim.get('status', 'Unknown'),
+            'lastUpdated': serialized_claim.get('submission_date', 'N/A'),
+            'probability': float(0.0 if serialized_claim.get('fraudProbability') is None else serialized_claim.get('fraudProbability')) * 100,
+            'fraudPrediction': serialized_claim.get('fraudPrediction', 0),
+            'fraudReason': serialized_claim.get('fraudReason', 'Not specified'),
+            'claimId': serialized_claim.get('claim_id', 'N/A'),
+            'severity': serialized_claim.get('severity', 'Unknown'),
+            'vehicleAmount': float(serialized_claim.get('vehicle_amount', 0.0)),
+            'totalAmount': float(serialized_claim.get('total_amount', 0.0)),
+            'propertyAmount': float(serialized_claim.get('property_amount', 0.0)),
+            'injuryAmount': float(serialized_claim.get('injury_amount', 0.0)),
+            'claimDetailType': serialized_claim.get('claim_detail_type', 'N/A'),
             'incident': {
-                'date': claim.get('incident_date', 'N/A'),
-                'city': claim.get('incident_city', 'Unknown'),
-                'location': claim.get('incident_location', 'Unknown')
+                'date': serialized_claim.get('incident_date', 'N/A'),
+                'city': serialized_claim.get('incident_city', 'Unknown'),
+                'location': serialized_claim.get('incident_location', 'Unknown')
             },
-            'customerId': claim.get('customer_id', 'N/A'),
+            'customerId': serialized_claim.get('customer_id', 'N/A'),
             'colorCode': color_code
         }
 
         formatted_claims.append({
-            'userName': claim.get('user_name', 'Unknown'),
+            'userName': serialized_claim.get('user_name', 'Unknown'),
             'claimDetails': claim_details
         })
 
@@ -312,3 +330,63 @@ def serve_uploads(filename):
     # Ensure your app’s configuration points to the correct uploads folder
     uploads_folder = Config.UPLOAD_FOLDER
     return send_from_directory(uploads_folder, filename)
+
+@admin_bp.route('/policies/<policy_id>/status', methods=['PUT'])
+def update_policy_status(policy_id):
+    """Update policy status endpoint"""
+    try:
+        data = request.json
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        query = """
+        MATCH (a:Application {application_id: $policy_id})
+        SET a.status = $status,
+            a.updated_at = datetime()
+        RETURN a
+        """
+        
+        result = neo4j.execute_query(query, parameters={
+            "policy_id": policy_id,
+            "status": new_status
+        })
+        
+        if not result:
+            return jsonify({'error': 'Policy not found'}), 404
+            
+        return jsonify({'message': 'Policy status updated successfully'})
+        
+    except Exception as e:
+        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
+        return jsonify({'error': 'An internal server error occurred'}), 500
+
+@admin_bp.route('/claims/<claim_id>/status', methods=['PUT'])
+def update_claim_status(claim_id):
+    """Update claim status endpoint"""
+    try:
+        data = request.json
+        new_status = data.get('status')
+        
+        if not new_status:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        query = """
+        MATCH (cm:ClaimManagement {id: $claim_id})
+        SET cm.status = $status
+        RETURN cm
+        """
+        
+        result = neo4j.execute_query(query, parameters={
+            "claim_id": claim_id,
+            "status": new_status
+        })
+        
+        if not result:
+            return jsonify({'error': 'Claim not found'}), 404
+            
+        return jsonify({'message': 'Claim status updated successfully'})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

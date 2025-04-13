@@ -1,4 +1,8 @@
+import { ReactNode } from "react";
+
 export interface Policy {
+  predicted_label: string;
+  confidence: number;
   id: string;
   vehicleDetails: {
     type: string;
@@ -29,15 +33,14 @@ export interface Policy {
     };
   };
   status: string;
-  forgeryScore: number;
   documents: {
+    imageUrl: string;
+    fileName: string;
+    label: ReactNode;
     name: string;
     type: string;
     forgeryScore: number;
   }[];
-  fraudAssessment: {
-    probability: number;
-  };
 }
 
 interface ClaimDetails {
