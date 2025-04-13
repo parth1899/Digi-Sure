@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from PIL import Image, ImageChops, ImageEnhance
 import os
+from werkzeug.utils import secure_filename
 from config import Config
 
 # Load your pre-trained model
@@ -54,7 +55,10 @@ def detect_forgery(current_user_email):  # Now receives email instead of user ob
         return jsonify({'error': 'No file selected.'}), 400
         
     # Save the file temporarily
-    temp_path = os.path.join(Config.UPLOAD_FOLDER, file.filename)
+    filename = secure_filename(file.filename)
+    temp_path = os.path.normpath(os.path.join(Config.UPLOAD_FOLDER, filename))
+    if not temp_path.startswith(Config.UPLOAD_FOLDER):
+        return jsonify({'error': 'Invalid file path.'}), 400
     file.save(temp_path)
     
     try:
