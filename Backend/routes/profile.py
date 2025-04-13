@@ -54,8 +54,8 @@ def get_profile(current_user_email):
             result = session.run("""
                 MATCH (u:User {email: $email})
                 OPTIONAL MATCH (u)-[:HAS_BANKING_DETAILS]->(b:BankingDetails)
-                OPTIONAL MATCH (u)-[:INSURANCE]->(a:Application)
                 OPTIONAL MATCH (u)-[:HAS_DETAILS]->(d:OtherDetails)
+                OPTIONAL MATCH (u)-[:INSURANCE]->(a:Application)
                 WHERE a.status = 'PENDING'
                 RETURN u, b, d, collect(a) as insurances
             """, email=current_user_email)
