@@ -23,3 +23,7 @@ class Config:
     @staticmethod
     def is_allowed_file(filename):
         return '.' in filename and filename.rsplit('.', 1)[1].lower() in Config.ALLOWED_EXTENSIONS
+
+    # Configuration for external API
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    MODEL_NAME = "llama-3.3-70b-versatile"

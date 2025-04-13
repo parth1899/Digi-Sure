@@ -48,7 +48,7 @@ interface ClaimDetails {
   claimType: string;
   status: string;
   lastUpdated: string;
-  fraudProbability: number;
+  probability: number;
   fraudPrediction: number;
   fraudReason: string;
   claimId: string;

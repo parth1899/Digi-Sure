@@ -167,10 +167,16 @@ def store_prediction_in_claim_management(driver, customer_id, prediction, fraud_
     MATCH (u:User {customerId: $customer_id})-[:HAS_CLAIMS]->(cm:ClaimManagement)
     SET cm.fraudPrediction = $prediction,
         cm.fraudProbability = $fraud_prob,
+        cm.fraudReason = $fraud_reason
     RETURN cm
     """
     with driver.session() as session:
-        session.run(update_query, customer_id=customer_id, prediction=int(prediction), fraud_prob=float(fraud_prob), fraud_reason=fraud_reason)
+        session.run(update_query, {
+            "customer_id": customer_id,
+            "prediction": int(prediction),
+            "fraud_prob": float(fraud_prob),
+            "fraud_reason": fraud_reason
+        })
 
 # --- Fraud Analysis ---
 def analyze_fraud_and_save(claim_management_id):
@@ -275,12 +281,15 @@ def predict_from_neo4j(customer_id, model_path=MODEL_SAVE_PATH):
     if fraud_prob is not None:
         print(f"Fraud Probability: {fraud_prob[0]}")
     
+    fraud_reason = "Fraud analysis completed. Reasoning not available in this version."
+    
     # Store prediction in ClaimManagement node
     store_prediction_in_claim_management(
         neo4j_conn.driver,
         customer_id=customer_id,
         prediction=prediction[0],
         fraud_prob=fraud_prob[0] if fraud_prob is not None else 0,
+        fraud_reason=fraud_reason
     )
     
     neo4j_conn.driver.close()
