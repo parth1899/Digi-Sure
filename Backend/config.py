@@ -19,6 +19,10 @@ class Config:
     # File Uploads
     UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+
+    #Groq Models
+    GROQ_MODEL = "llama3-70b-8192"
+    GROQ_API_KEY = os.getenv('GROQ_API_KEY')
     
     @staticmethod
     def is_allowed_file(filename):
