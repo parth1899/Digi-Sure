@@ -359,7 +359,8 @@ def update_policy_status(policy_id):
         return jsonify({'message': 'Policy status updated successfully'})
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        current_app.logger.error(f"An error occurred: {e}", exc_info=True)
+        return jsonify({'error': 'An internal server error occurred'}), 500
 
 @admin_bp.route('/claims/<claim_id>/status', methods=['PUT'])
 def update_claim_status(claim_id):

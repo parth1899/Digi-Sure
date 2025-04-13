@@ -84,9 +84,7 @@ def insert_data(neo4j_connection, data):
         # Generate and encrypt password for each user
         password = generate_strong_password()
         password_hash = encrypt_password(password)
-        
-        # Print the generated password (in real system, would be sent to user securely)
-        print(f"Generated password for {row['email']}: {password}")
+        pass  # Remove the print statement to avoid logging sensitive data
         
         # Format dates for Neo4j using ISO format strings
         created_at = datetime.strptime(row['created_at'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S')
