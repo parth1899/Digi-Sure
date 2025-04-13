@@ -48,6 +48,22 @@ const AdminClaims = () => {
     newStatus: string
   ) => {
     try {
+      const response = await fetch(
+        `http://localhost:8081/admin/claims/${claimManagementId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update claim status");
+      }
+
+      // Update local state after successful backend update
       setClaims((prevClaims) =>
         prevClaims.map((claim) =>
           claim.claimDetails.claimManagementId === claimManagementId
@@ -92,26 +108,26 @@ const AdminClaims = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-6 py-3"></th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-10 px-3 py-3"></th>
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Claim ID
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User Name
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Customer
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Type
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Amount
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fraud Status
+              <th className="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fraud Score
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -177,7 +193,7 @@ const AdminClaims = () => {
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
+                    <div className="flex items-center justify-center space-x-4">
                       <button
                         onClick={() =>
                           updateClaimStatus(
@@ -185,7 +201,7 @@ const AdminClaims = () => {
                             "Approved"
                           )
                         }
-                        className="text-green-600 hover:text-green-700"
+                        className="text-green-600 hover:text-green-700 p-1"
                       >
                         <Check size={20} />
                       </button>
@@ -196,7 +212,7 @@ const AdminClaims = () => {
                             "Rejected"
                           )
                         }
-                        className="text-red-600 hover:text-red-700"
+                        className="text-red-600 hover:text-red-700 p-1"
                       >
                         <X size={20} />
                       </button>
