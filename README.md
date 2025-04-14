@@ -52,10 +52,6 @@ Follow these steps to set up the project:
    npm install
    ```
 
-## Usage
-
-(Explain how to use your project.)
-
 ## Frontend Setup
 
 The frontend uses React + TypeScript + Vite. This setup provides a minimal configuration to get React working with Vite, HMR, and some ESLint rules.
