@@ -109,7 +109,7 @@ const AdminClaims = () => {
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               <th className="w-10 px-3 py-3"></th>
-              <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Claim ID
               </th>
               <th className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -127,7 +127,7 @@ const AdminClaims = () => {
               <th className="w-1/8 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Fraud Score
               </th>
-              <th className="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="w-1/12 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>

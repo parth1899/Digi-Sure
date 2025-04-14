@@ -214,6 +214,7 @@ function ClaimForm({ onClose, onSubmit }: ClaimFormProps) {
                   <option value="Police">Police</option>
                   <option value="Fire">Fire</option>
                   <option value="Ambulance">Ambulance</option>
+                  <option value="None">None</option>
                   <option value="Other">Other</option>
                 </select>
               </div>

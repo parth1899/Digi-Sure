@@ -200,3 +200,17 @@ class Application:
                     app["status"]
                 ))
             return applications
+
+    @staticmethod
+    def link_to_claim_management(application_id, user_email):
+        db = Neo4jConnection()
+        with db.get_session() as session:
+            # Query to link Application node to ClaimManagement node
+            query = """
+            MATCH (u:User {email: $user_email})-[:HAS_CLAIMS]->(cm:ClaimManagement)
+            MATCH (a:Application {application_id: $application_id})
+            MERGE (cm)-[:MANAGES_APPLICATION]->(a)
+            RETURN cm, a
+            """
+            result = session.run(query, user_email=user_email, application_id=application_id)
+            return result.single() is not None
