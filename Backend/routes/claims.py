@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify
 from database.connection import Neo4jConnection
 from utils.auth import token_required
 import uuid
-from detector import predict_from_neo4j
+from utils.detector import predict_from_neo4j, analyze_fraud_and_save
 
 claims_bp = Blueprint('claims', __name__)
 neo4j = Neo4jConnection()
@@ -14,7 +14,10 @@ def create_claim(current_user_email):
     data = request.json
     claim_id = str(uuid.uuid4())
     
-    # Create nodes and relationships
+    # Generate a unique management ID
+    management_id = f"management_{current_user_email}_{uuid.uuid4()}"
+
+    # Update the query to use the unique management ID
     query = """
     MATCH (u:User {email: $email})
     CREATE 
@@ -57,7 +60,7 @@ def create_claim(current_user_email):
     params = {
         'created_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'email': current_user_email,
-        'management_id': f"management_{current_user_email}",
+        'management_id': management_id,
         'claim_id': claim_id,
         'customer_id': f"customer_{current_user_email}",
         'incident_id': f"incident_{claim_id}",
@@ -77,16 +80,22 @@ def create_claim(current_user_email):
         'bodily_injuries': data['bodily_injuries'],
         'police_report': data['police_report_available']
     }
-    
-    result = neo4j.execute_query(query, params)
-    
-    # Get the customer ID from the query result
-    customer_id = result[0]['customer_id']
-    
-    # Pass the customer ID to the fraud detection function
-    predict_from_neo4j(customer_id=customer_id)
-    
-    return jsonify({'claim_id': result[0]['claim_id']}), 201
+
+    # Execute the query only after successful endpoint execution
+    try:
+        result = neo4j.execute_query(query, params)
+        customer_id = result[0]['customer_id']
+
+        # Pass the customer ID to the fraud detection function
+        predict_from_neo4j(customer_id=customer_id)
+
+        # Call the fraud analysis function
+        analyze_fraud_and_save(management_id)
+
+        return jsonify({'claim_id': result[0]['claim_id']}), 201
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return jsonify({'error': 'Failed to process the claim.'}), 500
 
 
 @claims_bp.route('/view', methods=['GET'])

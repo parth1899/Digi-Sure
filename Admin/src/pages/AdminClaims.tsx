@@ -278,10 +278,7 @@ const AdminClaims = () => {
                               </h5>
                               <p className="text-red-700 mt-2">
                                 Fraud Probability:{" "}
-                                {(
-                                  claim.claimDetails.fraudProbability * 100
-                                ).toFixed(1)}
-                                %
+                                {claim.claimDetails.probability.toFixed(1)}%
                               </p>
                               <p className="text-red-700">
                                 Reason: {claim.claimDetails.fraudReason}
