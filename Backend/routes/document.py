@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 
 # Load your pre-trained model
-model = load_model('routes/image_forgery_detection_casia2.h5')
+model = load_model('routes/models/image_forgery_detection_casia2.h5')
 image_size = (128, 128)
 
 def convert_to_ela_image(path, quality=90):
