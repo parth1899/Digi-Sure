@@ -2,47 +2,22 @@
 from flask import Blueprint, request, jsonify, current_app
 import os
 from werkzeug.utils import secure_filename
-import pytesseract
-from PIL import Image
-import fitz  # PyMuPDF
+import base64
+from mistralai import Mistral
 from routes.helper.structured_response import DocumentProcessor
+from config import Config
+from io import BytesIO
 
 document_extract_bp = Blueprint('document_extract', __name__)
 
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS    
 
-def extract_text_from_image(image_path):
-    """Extract text from image file using Tesseract OCR"""
-    try:
-        img = Image.open(image_path)
-        text = pytesseract.image_to_string(img)
-        return text
-    except Exception as e:
-        raise e
-
-def extract_text_from_pdf(pdf_path):
-    """Extract text from PDF file by converting pages to images"""
-    text = ""
-    try:
-        pdf_document = fitz.open(pdf_path)
-        for page_num in range(len(pdf_document)):
-            page = pdf_document.load_page(page_num)
-            pix = page.get_pixmap()
-            img_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f"temp_page_{page_num}.png")
-            pix.save(img_path)
-            text += extract_text_from_image(img_path) + "\n"
-            os.remove(img_path)  # Clean up temporary image
-        pdf_document.close()
-        return text
-    except Exception as e:
-        raise e
-
-@document_extract_bp.route('/ocr', methods=['POST'])
-def ocr_extraction():
+@document_extract_bp.route('/extract_policy', methods=['POST'])
+def policy_extraction():
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     
@@ -50,26 +25,114 @@ def ocr_extraction():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
     
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        
-        try:
-            if filename.lower().endswith('.pdf'):
-                extracted_text = extract_text_from_pdf(file_path)
-            else:
-                extracted_text = extract_text_from_image(file_path)
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
 
-            processor = DocumentProcessor()
-            structured_data = processor.process_extraction(extracted_text)
-            
-            os.remove(file_path)  # Clean up uploaded file
-            # return jsonify({"text": extracted_text})
-            return jsonify(structured_data.model_dump())
-        
-        except Exception as e:
-            os.remove(file_path)
-            return jsonify({"error": str(e)}), 500
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
+    file.save(file_path)
     
-    return jsonify({"error": "Invalid file type"}), 400
+    try:
+        api_key = Config.MISTRAL_API_KEY
+        if not api_key:
+            raise ValueError("MISTRAL_API_KEY is not configured in application settings")
+        
+        client = Mistral(api_key=api_key)
+        extracted_text = ""
+
+        
+        # Process PDF file
+        with open(file_path, 'rb') as pdf_file:
+            uploaded_file = client.files.upload(
+                file={
+                    "file_name": filename,
+                    "content": pdf_file,
+                },
+                purpose="ocr"
+            )
+        
+        signed_url = client.files.get_signed_url(file_id=uploaded_file.id)
+        ocr_response = client.ocr.process(
+            model="mistral-ocr-latest",
+            document={
+                "type": "document_url",
+                "document_url": signed_url.url,
+            }
+        )
+        # Extract text from PDF pages
+        extracted_text = "\n\n".join(page.markdown for page in ocr_response.pages)
+            
+
+        # Process extracted text
+        processor = DocumentProcessor()
+        structured_data = processor.process_insurance_extraction(extracted_text)
+        
+        # os.remove(file_path)
+        return jsonify(structured_data.model_dump())
+    
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        current_app.logger.error(f"OCR processing failed: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    
+
+@document_extract_bp.route('/extract_claim', methods=['POST'])
+def claim_extraction():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(Config.UPLOAD_FOLDER, filename)
+    file.save(file_path)
+    
+    try:
+        api_key = Config.MISTRAL_API_KEY
+        if not api_key:
+            raise ValueError("MISTRAL_API_KEY is not configured in application settings")
+        
+        client = Mistral(api_key=api_key)
+        extracted_text = ""
+
+        
+        # Process PDF file
+        with open(file_path, 'rb') as pdf_file:
+            uploaded_file = client.files.upload(
+                file={
+                    "file_name": filename,
+                    "content": pdf_file,
+                },
+                purpose="ocr"
+            )
+        
+        signed_url = client.files.get_signed_url(file_id=uploaded_file.id)
+        ocr_response = client.ocr.process(
+            model="mistral-ocr-latest",
+            document={
+                "type": "document_url",
+                "document_url": signed_url.url,
+            }
+        )
+        # Extract text from PDF pages
+        extracted_text = "\n\n".join(page.markdown for page in ocr_response.pages)
+            
+
+        # Process extracted text
+        processor = DocumentProcessor()
+        structured_data = processor.process_claim_extraction(extracted_text)
+        
+        # os.remove(file_path)
+        return jsonify(structured_data.model_dump())
+    
+    except Exception as e:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        current_app.logger.error(f"OCR processing failed: {str(e)}")
+        return jsonify({"error": str(e)}), 500
