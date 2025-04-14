@@ -7,6 +7,7 @@ from routes.dashboard import dashboard_bp
 from routes.claims import claims_bp
 from routes.admin import admin_bp
 from routes.anomaly_detection import log_bp
+from routes.document_extract import document_extract_bp
 import os
 from flask_cors import CORS
 from config import Config
@@ -27,6 +28,7 @@ app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
 app.register_blueprint(claims_bp, url_prefix='/claims')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(log_bp, url_prefix='/log')
+app.register_blueprint(document_extract_bp, url_prefix='/ocr')
 
 @app.route('/')
 def home():
