@@ -1,9 +1,9 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Sidebar from './components/Sidebar';
-import AdminHome from './pages/AdminHome';
-import AdminPolicies from './pages/AdminPolicies';
-import AdminClaims from './pages/AdminClaims';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Sidebar from "./components/Sidebar";
+import AdminHome from "./pages/AdminHome";
+import AdminPolicies from "./pages/AdminPolicies";
+import AdminClaims from "./pages/AdminClaims";
+import UploadFiles from "./pages/UploadFiles";
 
 function App() {
   return (
@@ -15,6 +15,7 @@ function App() {
             <Route path="/" element={<AdminHome />} />
             <Route path="/policies" element={<AdminPolicies />} />
             <Route path="/claims" element={<AdminClaims />} />
+            <Route path="/upload" element={<UploadFiles />} />
           </Routes>
         </main>
       </div>

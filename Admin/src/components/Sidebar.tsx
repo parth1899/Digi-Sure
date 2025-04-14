@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, FileText, AlertCircle, LogOut } from "lucide-react";
+import { Home, FileText, AlertCircle, LogOut, Upload } from "lucide-react";
 
 const Sidebar = () => {
   return (
@@ -44,8 +44,18 @@ const Sidebar = () => {
           <AlertCircle size={18} />
           <span>Claims</span>
         </NavLink>
+        <NavLink
+          to="/upload"
+          className={({ isActive }) =>
+            `flex items-center space-x-2 p-2 rounded-lg transition-colors ${
+              isActive ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+            }`
+          }
+        >
+          <Upload size={18} />
+          <span>Upload</span>
+        </NavLink>
       </nav>
-
       <div className="absolute bottom-4 left-4">
         <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors">
           <LogOut size={18} />
