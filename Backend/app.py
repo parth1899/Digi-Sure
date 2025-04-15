@@ -11,6 +11,7 @@ from routes.document_extract import document_extract_bp
 import os
 from flask_cors import CORS
 from config import Config
+from middleware.behavior_tracker import UserBehaviorTracker
 
 app = Flask(__name__)
 CORS(app)
@@ -18,6 +19,8 @@ app.config.from_object(Config)
 
 # Register blueprints
 os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
+
+behavior_tracker = UserBehaviorTracker(app)
 
 # Register blueprints
 app.register_blueprint(auth_bp, url_prefix='/auth')
