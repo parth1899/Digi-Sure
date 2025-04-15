@@ -31,6 +31,10 @@ class InsuranceExtraction(BaseModel):
     year: int = Field(..., description="Manufacturing year of the vehicle")
 
 class ClaimExtraction(BaseModel):
+    name: str = Field(..., description="Full name of the claimant")
+    email: str = Field(..., description="Claimant's email address")
+    mobile: str = Field(..., description="Claimant's contact phone number")
+    address: str = Field(..., description="Claimant's complete residential address")
     status: Literal['In Progress'] = Field(
         default='In Progress', 
         description="Current status of the claim"

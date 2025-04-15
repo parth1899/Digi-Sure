@@ -57,7 +57,7 @@ const UploadFiles = () => {
   const handleSubmit = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8081/update_${uploadType}`,
+        `http://localhost:8081/${uploadType === 'policy' ? 'apply/update_policy' : 'claims/update_claim'}`,
         {
           method: "POST",
           headers: {
