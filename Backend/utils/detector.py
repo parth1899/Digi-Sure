@@ -20,7 +20,7 @@ PREDICTION_COLUMNS = [
     'AddressChange-Claim', 'NumberOfCars', 'Year'
 ]
 
-MODEL_SAVE_PATH = "xgb_fraud_model_gridcv.pkl"
+MODEL_SAVE_PATH = "utils/xgb_fraud_model_gridcv.pkl"
 
 # --- Neo4j Data Fetching ---
 def fetch_data_from_neo4j(driver, query, params=None):

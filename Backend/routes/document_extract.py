@@ -39,7 +39,6 @@ def policy_extraction():
         
         client = Mistral(api_key=api_key)
         extracted_text = ""
-
         
         # Process PDF file
         with open(file_path, 'rb') as pdf_file:
@@ -67,7 +66,7 @@ def policy_extraction():
         processor = DocumentProcessor()
         structured_data = processor.process_insurance_extraction(extracted_text)
         
-        # os.remove(file_path)
+        os.remove(file_path)
         return jsonify(structured_data.model_dump())
     
     except Exception as e:

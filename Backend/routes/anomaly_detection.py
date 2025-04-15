@@ -5,8 +5,8 @@ import numpy as np
 
 log_bp = Blueprint('log', __name__)
 # Load artifacts
-model = joblib.load('routes/iso_forest_model.pkl')
-artifacts = joblib.load('routes/preprocessing_artifacts.pkl')
+model = joblib.load('routes/models/iso_forest_model.pkl')
+artifacts = joblib.load('routes/models/preprocessing_artifacts.pkl')
 
 @log_bp.route('/detect-anomaly', methods=['POST'])
 def detect_anomaly():
