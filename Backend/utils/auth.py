@@ -1,3 +1,6 @@
+import secrets
+import string
+import bcrypt
 import jwt
 from jwt import decode
 from datetime import datetime, timedelta
@@ -42,3 +45,27 @@ def get_user_from_token(token):
     except Exception as e:
         print(f"Token decode error: {str(e)}")
         return None
+    
+def generate_strong_password():
+    letters = string.ascii_letters
+    digits = string.digits
+    special_chars = "!@#$%^&*"
+    all_chars = letters + digits + special_chars
+
+    password = ''.join(secrets.choice(letters) for _ in range(2))
+    password += ''.join(secrets.choice(digits) for _ in range(2))
+    password += ''.join(secrets.choice(special_chars) for _ in range(2))
+    password += ''.join(secrets.choice(all_chars) for _ in range(6))
+
+    password_list = list(password)
+    secrets.SystemRandom().shuffle(password_list)
+    return ''.join(password_list)
+
+def encrypt_password(password):
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed.decode('utf-8')
+
+def check_password(password, hashed_password):
+    """Check if the provided password matches the hashed password"""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))

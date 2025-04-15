@@ -11,6 +11,8 @@ from routes.document_extract import document_extract_bp
 import os
 from flask_cors import CORS
 from config import Config
+import warnings
+warnings.filterwarnings("ignore")
 from middleware.behavior_tracker import UserBehaviorTracker
 
 app = Flask(__name__)

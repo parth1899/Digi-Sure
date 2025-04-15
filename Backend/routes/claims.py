@@ -4,6 +4,7 @@ from database.connection import Neo4jConnection
 from utils.auth import token_required
 import uuid
 from utils.detector import predict_from_neo4j, analyze_fraud_and_save
+from utils.auth import encrypt_password, generate_strong_password
 
 claims_bp = Blueprint('claims', __name__)
 neo4j = Neo4jConnection()
@@ -189,3 +190,159 @@ def get_claims(current_user_email):
     except Exception as e:
         print(f"Error occurred: {e}")
         return jsonify({'error': 'Failed to fetch claims.'}), 500
+
+
+def generate_customer_id():
+    unique_id = str(uuid.uuid4()).upper().replace('-', '')
+    return f"CUS-{unique_id[:4]}-{unique_id[4:8]}-{unique_id[8:12]}"
+
+@claims_bp.route('/update_claim', methods=['POST'])
+def update_claim():
+    """Update claim and link to ClaimManagement node"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        required_fields = [
+            'email', 'incident_type', 'collision_type', 'incident_severity', 'total_claim_amount',
+            'injury_claim', 'property_claim', 'vehicle_claim', 'incident_date',
+            'incident_hour', 'incident_location', 'incident_city', 'vehicles_involved',
+            'witnesses', 'property_damage', 'bodily_injuries', 'police_report',
+            'authorities_contacted', 'description'
+        ]
+
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
+
+        email = data['email']
+
+        with neo4j.get_session() as session:
+            # Store all properties as flat key-value pairs
+            user_check_query = """
+            MATCH (u:User {email: $email})
+            RETURN u
+            """
+
+            user_result = session.execute_query(user_check_query, {'email': email})
+
+            if not user_result:
+                new_password = generate_strong_password()
+                encrypted_password = encrypt_password(new_password)
+                customer_id = generate_customer_id()
+
+                create_user_query = """
+                CREATE (u:User {
+                    email: $email,
+                    name: $name,
+                    mobile: $mobile,
+                    address: $address,
+                    created_at: $created_at,
+                    customerId: $customerId,
+                    password_hash: $password_hash
+                })
+                RETURN u
+                """
+
+                user_data = {
+                    'email': email,
+                    'name': data.get('name', 'Unknown User'),
+                    'mobile': data.get('mobile', '0000000000'),
+                    'address': data.get('address', 'Unknown Address'),
+                    'created_at': datetime.now().isoformat(),
+                    'customerId': customer_id,
+                    'password_hash': encrypted_password
+                }
+
+                user_result = session.execute_query(create_user_query, user_data)
+            # Check if the user has a policy
+            policy_check_query = """
+            MATCH (u:User {email: $email})-[:INSURANCE]->(a:Application)
+            RETURN a
+            """
+            policy_result = session.execute_query(policy_check_query, {'email': email})
+
+            if not policy_result:
+                return jsonify({'error': 'No policy found for the user'}), 404
+
+            claim_id = str(uuid.uuid4())
+            management_id = f"management_{email}_{uuid.uuid4()}"
+            incident_id = f"incident_{claim_id}"
+
+            query = """
+            MATCH (u:User {email: $email})
+            CREATE 
+                (cm:ClaimManagement {
+                    id: $management_id,
+                    status: 'In Progress',
+                    last_updated: $created_date,
+                    incident_type: $incident_type
+                }),
+                (c:Claim {
+                    id: $claim_id,
+                    collision_type: $collision_type,
+                    severity: $incident_severity,
+                    total_amount: $total_claim_amount,
+                    injury_amount: $injury_claim,
+                    property_amount: $property_claim,
+                    vehicle_amount: $vehicle_claim,
+                    authorities_contacted: $authorities_contacted,
+                    description: $description
+                }),
+                (i:Incident {
+                    id: $incident_id,
+                    date: $incident_date,
+                    time: $incident_hour,
+                    location: $incident_location,
+                    city: $incident_city,
+                    vehicles_involved: $vehicles_involved,
+                    witnesses: $witnesses,
+                    property_damage: $property_damage,
+                    bodily_injuries: $bodily_injuries,
+                    police_report: $police_report
+                }),
+                (u)-[:HAS_CLAIMS]->(cm),
+                (cm)-[:MANAGES]->(c),
+                (c)-[:OCCURRED_ON]->(i)
+            RETURN c.id as claim_id, cm.id as management_id
+            """
+
+            params = {
+                'email': email,
+                'management_id': management_id,
+                'claim_id': claim_id,
+                'incident_id': incident_id,
+                'created_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'incident_type': data.get('incident_type', 'Unknown'),
+                'collision_type': data.get('collision_type', 'Unknown'),
+                'incident_severity': data.get('severity', 'Unknown'),
+                'total_claim_amount': float(data.get('total_claim_amount', 0)),
+                'injury_claim': float(data.get('injury_claim_amount', 0)),
+                'property_claim': float(data.get('property_claim_amount', 0)),
+                'vehicle_claim': float(data.get('vehicle_claim_amount', 0)),
+                'incident_date': data.get('date', 'Unknown'),
+                'incident_hour': data.get('incident_hour', 'Unknown'),
+                'incident_location': data.get('location', 'Unknown'),
+                'incident_city': data.get('city', 'Unknown'),
+                'vehicles_involved': int(data.get('no_of_vehicles_involved', 0)),
+                'witnesses': int(data.get('no_of_witnesses', 0)),
+                'property_damage': data.get('property_damage', 'Unknown'),
+                'bodily_injuries': data.get('bodily_injuries', 'Unknown'),
+                'police_report': data.get('police_report', 'Unknown'),
+                'authorities_contacted': data.get('authorities_contacted', 'Unknown'),
+                'description': data.get('incident_description', 'Unknown')
+            }
+
+            result = session.execute_query(query, params)
+
+            if not result:
+                return jsonify({'error': 'Failed to create claim or link nodes'}), 500
+
+            return jsonify({
+                'claim_id': result[0]['claim_id'],
+                'management_id': result[0]['management_id']
+            }), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
