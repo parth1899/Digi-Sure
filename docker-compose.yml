@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    env_file: .env
+    ports:
+      - "8081:5000"
+    depends_on:
+      - neo4j
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    env_file: .env
+    depends_on:
+      - backend
+
+  admin:
+    build: ./admin
+    ports:
+      - "3001:80"
+    env_file: .env
+    depends_on:
+      - backend
+
+  neo4j:
+    image: neo4j:5.18
+    environment:
+      NEO4J_AUTH: "neo4j/parthYM8"
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    volumes:
+      - D:\VIT\Hackathons\Hack-AI-Thon-Project/Data:/data

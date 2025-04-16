@@ -61,8 +61,7 @@ function Apply() {
     policy_csl: 0,
     total_insurance_amount: 0,
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [error, setError] = useState<string | null>(null);
+  // Removed unused error state
 
   const steps = [
     { number: 1, title: "Vehicle Details", icon: Car },
@@ -98,7 +97,7 @@ function Apply() {
         throw new Error("Failed to submit application");
       }
     } catch (err) {
-      setError(
+      console.error(
         err instanceof Error
           ? err.message
           : "An error occurred while submitting the application"
@@ -120,7 +119,6 @@ function Apply() {
 
   const handleBack = () => {
     setStep((prev) => Math.max(prev - 1, 1));
-    setError(null); // Clear any existing errors when going back
   };
 
   const updateFormData = (data: Partial<FormData>) => {
