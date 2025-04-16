@@ -27,7 +27,7 @@ class InsuranceExtraction(BaseModel):
     total_insurance_amount: float = Field(..., description="Total sum insured amount")
     umbrella_limit: float = Field(..., description="Additional coverage limit if applicable")
     updated_at: datetime = Field(..., description="Policy last update timestamp in ISO format")
-    vehicle_type: str = Field(..., description="Type of vehicle (car/bike/commercial)")
+    vehicle_type: str = Field(..., description="Type of vehicle (Car/Two-Wheeler/Commercial/SUV)")
     year: int = Field(..., description="Manufacturing year of the vehicle")
 
 class ClaimExtraction(BaseModel):
