@@ -50,14 +50,20 @@ class Application:
             }
 
             # Create application node and relationship with user
-            result = session.run("""
+            result = session.run(
+                """
                 MATCH (u:User {email: $user_email})
+                MERGE (v:VehicleType {type: $vehicle_type})
+                MERGE (vi:VehicleInsurance {name: 'Vehicle Insurance'})
                 CREATE (a:Application)
                 SET a = $application_data
                 CREATE (u)-[:INSURANCE]->(a)
+                CREATE (v)-[:HAS_APPLICATION]->(a)
+                MERGE (v)-[:PART_OF]->(vi)
                 RETURN a
                 """,
                 user_email=user_email,
+                vehicle_type=data["vehicleType"],
                 application_data=application_data
             )
             
