@@ -45,7 +45,7 @@ def get_user_from_token(token):
     except Exception as e:
         print(f"Token decode error: {str(e)}")
         return None
-    
+
 def generate_strong_password():
     letters = string.ascii_letters
     digits = string.digits
@@ -60,12 +60,3 @@ def generate_strong_password():
     password_list = list(password)
     secrets.SystemRandom().shuffle(password_list)
     return ''.join(password_list)
-
-def encrypt_password(password):
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
-    return hashed.decode('utf-8')
-
-def check_password(password, hashed_password):
-    """Check if the provided password matches the hashed password"""
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))

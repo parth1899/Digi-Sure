@@ -83,7 +83,7 @@ def insert_data(neo4j_connection, data):
     for _, row in data.iterrows():
         # Generate and encrypt password for each user
         password = generate_strong_password()
-        password_hash = encrypt_password(password)
+        password_hash = generate_password_hash(password)
         pass  # Remove the print statement to avoid logging sensitive data
         
         # Format dates for Neo4j using ISO format strings

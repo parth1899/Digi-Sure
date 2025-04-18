@@ -4,8 +4,8 @@ from database.connection import Neo4jConnection
 from utils.auth import token_required
 import uuid
 from utils.detector import predict_from_neo4j, analyze_fraud_and_save
-from utils.auth import encrypt_password, generate_strong_password
-
+from werkzeug.security import generate_password_hash
+from utils.auth import generate_strong_password
 claims_bp = Blueprint('claims', __name__)
 neo4j = Neo4jConnection()
 
@@ -229,7 +229,7 @@ def update_claim():
 
             if not user_result:
                 new_password = generate_strong_password()
-                encrypted_password = encrypt_password(new_password)
+                encrypted_password = generate_password_hash(new_password)
                 customer_id = generate_customer_id()
 
                 create_user_query = """

@@ -1,4 +1,5 @@
-from utils.auth import encrypt_password, generate_strong_password
+from werkzeug.security import generate_password_hash
+from utils.auth import generate_strong_password
 import datetime
 import json
 from flask import Blueprint, request, jsonify
@@ -86,7 +87,7 @@ def update_application():
 
                 if not user_result:
                     new_password = generate_strong_password()
-                    encrypted_password = encrypt_password(new_password)
+                    encrypted_password = generate_password_hash(new_password)
                     customer_id = generate_customer_id()
 
                     create_user_query = """

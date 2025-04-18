@@ -1,4 +1,4 @@
-from utils.auth import encrypt_password, check_password
+from werkzeug.security import generate_password_hash, check_password_hash
 from database.connection import Neo4jConnection
 from datetime import datetime
 
@@ -21,7 +21,8 @@ class User:
             )
             if result.single():
                 return None
-            password_hash = encrypt_password(password)
+
+            password_hash = generate_password_hash(password)
             # Use Neo4j's timestamp() function to store creation time
             result = session.run(
                 """
@@ -69,4 +70,4 @@ class User:
             return None
 
     def check_password(self, password):
-        return check_password(self.password_hash, password)
+        return check_password_hash(self.password_hash, password)
