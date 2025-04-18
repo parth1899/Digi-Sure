@@ -83,8 +83,10 @@ def insert_data(neo4j_connection, data):
     for _, row in data.iterrows():
         # Generate and encrypt password for each user
         password = generate_strong_password()
-        password_hash = generate_password_hash(password)
-        pass  # Remove the print statement to avoid logging sensitive data
+        password_hash = encrypt_password(password)
+        
+        # Print the generated password (in real system, would be sent to user securely)
+        print(f"Generated password for {row['email']}: {password}")
         
         # Format dates for Neo4j using ISO format strings
         created_at = datetime.strptime(row['created_at'], '%Y-%m-%dT%H:%M:%S').strftime('%Y-%m-%dT%H:%M:%S')
@@ -100,6 +102,10 @@ def insert_data(neo4j_connection, data):
             incident_date = None
             incident_time = None
             last_updated = created_at
+        vehicle_insurance_ids = {}
+        vehicle_type = row['vehicle_type'].lower()
+        if vehicle_type not in vehicle_insurance_ids:
+            vehicle_insurance_ids[vehicle_type] = str(uuid.uuid4())
 
         # Create User node with basic information
         create_user = """
@@ -156,9 +162,15 @@ def insert_data(neo4j_connection, data):
             total_insurance_amount: $total_insurance_amount,
             umbrella_limit: $umbrella_limit,
             updated_at: datetime($app_updated_at),
-            vehicle_type: $vehicle_type,
             year: $year
         })
+        WITH a, u
+        MERGE (vt:VehicleType { type: $vehicle_type })
+        ON CREATE SET vt.created_at = datetime($app_created_at)
+        CREATE (a)-[:FOR_VEHICLE_TYPE]->(vt)
+        MERGE (vi:VehicleInsurance { id: $vehicle_insurance_id })
+        ON CREATE SET vi.type = $vehicle_type
+        CREATE (vt)-[:HAS_INSURANCE]->(vi)
         CREATE (u)-[:INSURANCE]->(a)
         """
 
@@ -282,7 +294,9 @@ def insert_data(neo4j_connection, data):
             'umbrella_limit': float(row['umbrella_limit']),
             'app_updated_at': created_at,
             'vehicle_type': row['vehicle_type'].lower(),
-            'year': int(row['year'])
+            'year': int(row['year']),
+            'vehicle_type': vehicle_type,
+            'vehicle_insurance_id': vehicle_insurance_ids[vehicle_type]
         })
 
         # Execute BankingDetails creation
