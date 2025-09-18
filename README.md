@@ -1,7 +1,5 @@
 
-# Hack-AI-Thon-Project
-
-## About The Project
+# AI-Powered Fraud Detection and Document Verification
 
 This innovative insurance platform transforms fraud detection for verified document retrieval using advanced AI-powered mechanisms. By reducing the reliance on manual verification, the system enhances efficiency while delivering real-time fraud analysis through multiple layers of security checks.
 
@@ -11,12 +9,20 @@ This project was created for the Hackathon **Hack-AI-Thon** conducted by **SBI**
 
 https://github.com/user-attachments/assets/fe1478f6-ee3b-4267-9498-aa783a4aa61f
 
+## Architecture
+
+<img width="1245" height="701" alt="image" src="https://github.com/user-attachments/assets/5d6c436a-933e-4938-b483-9f1d24cec44c" />
+
 ## Technology Stack
 
 This project leverages the following technologies:
-- **TypeScript** (77.7%)
-- **Python** (20.9%)
-- **Other** (1.4%)
+- **TypeScript** 
+- **Flask** 
+- **Neo4J**
+- **XGBoost**
+- **CNN**
+- **Mistral OCR**
+- **Isolation Forest**
 
 ## Database Setup
 
@@ -35,50 +41,9 @@ CREATE INDEX user_surname IF NOT EXISTS
 FOR (u:User) ON (u.surname);
 ```
 
-## Installation & Setup
-
-Follow these steps to set up the project:
-
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/parthpetkar/Hack-AI-Thon-Project.git
-   ```
-2. **Navigate to the project directory:**
-   ```sh
-   cd Hack-AI-Thon-Project
-   ```
-3. **Install dependencies:**
-   ```sh
-   npm install
-   ```
-
-## Frontend Setup
-
-The frontend uses React + TypeScript + Vite. This setup provides a minimal configuration to get React working with Vite, HMR, and some ESLint rules.
-
-For more information, refer to the [Frontend README](https://github.com/parthpetkar/Hack-AI-Thon-Project/blob/ceccbf25d606490d50b1d2bcc8276fb779015ed4/Frontend/README.md).
-
 ## Contributors
 
-We would like to thank the following contributors for their hard work:
-
-- [parthpetkar](https://github.com/parthpetkar) - 12 contributions
-- [parth1899](https://github.com/parth1899) - 9 contributions
-- [adideo03](https://github.com/adideo03) - 8 contributions
-- [aryaalukar](https://github.com/arya911) - 7 contributions
-
-## Contributing
-
-We welcome contributions from the community. Please follow these steps to contribute:
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature-branch`)
-3. Commit your changes (`git commit -m 'Add a feature'`)
-4. Push to the branch (`git push origin feature-branch`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-Feel free to customize the sections as per your project's specifics.
+- [Parth Petkar](https://github.com/parthpetkar)
+- [Parth Kalani](https://github.com/parth1899)
+- [Aditya Deore](https://github.com/adideo03)
+- [Arya Alurkar](https://github.com/arya911)
